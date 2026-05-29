@@ -1,0 +1,41 @@
+{
+  "name": "doan-chuan-back-end",
+  "version": "1.0.0",
+  "description": "Day la backend ve du an Doan Chuan, 1 he thong quan ly tour du lich muc dich chinh la quan ly khach hang va lich trinh",
+  "keywords": [
+    "doan-chuan",
+    "vanct"
+  ],
+  "license": "ISC",
+  "author": "VanCt",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "body-parser": "^1.20.3",
+    "compression": "^1.8.1",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "express-mongo-sanitize": "^2.2.0",
+    "google-auth-library": "^10.6.2",
+    "helmet": "^8.1.0",
+    "joi": "^18.0.2",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.23.0",
+    "morgan": "^1.10.1",
+    "nodemailer": "^8.0.3",
+    "socket.io": "^4.8.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
+    "xss-clean": "^0.1.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
