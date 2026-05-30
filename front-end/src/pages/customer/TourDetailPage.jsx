@@ -37,6 +37,7 @@ import { groupService } from '../../services/groupService';
 import { authService } from '../../services/authService';
 import { itineraryService } from '../../services/itineraryService';
 import { attendanceService } from '../../services/attendanceService';
+import ExcelImportModal from '../../components/ExcelImportModal';
 
 // Helper function to generate avatar color and initials from name
 function stringToColor(string) {
@@ -83,6 +84,7 @@ export default function TourDetailPage() {
   // Modals state
   const [editTourOpen, setEditTourOpen] = useState(false);
   const [addPassengerOpen, setAddPassengerOpen] = useState(false);
+  const [excelModalOpen, setExcelModalOpen] = useState(false);
   const [editPassengerOpen, setEditPassengerOpen] = useState(false);
   const [addVehicleOpen, setAddVehicleOpen] = useState(false);
   const [editVehicleOpen, setEditVehicleOpen] = useState(false);
@@ -136,6 +138,9 @@ export default function TourDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionError, setActionError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Itinerary & Attendance States
   const [activeTab, setActiveTab] = useState(0); // 0: Members&Vehicles, 1: Itinerary
@@ -1359,23 +1364,42 @@ export default function TourDetailPage() {
             )}
 
             {!isAdminPath && (
-              <Button
-                variant="contained"
-                onClick={handleOpenAddPassenger}
-                startIcon={<PersonAddIcon />}
-                sx={{
-                  bgcolor: '#10b981',
-                  color: '#fff',
-                  '&:hover': { bgcolor: '#059669' },
-                  fontWeight: 'bold',
-                  px: 3,
-                  py: 1.2,
-                  borderRadius: 4,
-                  boxShadow: '0 4px 14px 0 rgba(16,185,129,0.39)'
-                }}
-              >
-                {t('btn_add_passenger')}
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  onClick={handleOpenAddPassenger}
+                  startIcon={<PersonAddIcon />}
+                  sx={{
+                    bgcolor: '#10b981',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#059669' },
+                    fontWeight: 'bold',
+                    px: 3,
+                    py: 1.2,
+                    borderRadius: 4,
+                    boxShadow: '0 4px 14px 0 rgba(16,185,129,0.39)'
+                  }}
+                >
+                  {t('btn_add_passenger')}
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => setExcelModalOpen(true)}
+                  startIcon={<FormatListBulletedIcon />}
+                  sx={{
+                    bgcolor: '#8b5cf6',
+                    color: '#fff',
+                    '&:hover': { bgcolor: '#7c3aed' },
+                    fontWeight: 'bold',
+                    px: 3,
+                    py: 1.2,
+                    borderRadius: 4,
+                    boxShadow: '0 4px 14px 0 rgba(139,92,246,0.39)'
+                  }}
+                >
+                  Thêm bằng Excel
+                </Button>
+              </>
             )}
 
             {isLeaderOrCreator && (
@@ -1448,6 +1472,13 @@ export default function TourDetailPage() {
               <PeopleIcon color="primary" /> {t('passengers_list')}
             </Typography>
             <Stack direction="row" spacing={2} alignItems="center">
+              <TextField
+                size="small"
+                placeholder="Tìm tên, SĐT..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}
+              />
               <Select
                 size="small"
                 value={statusFilter}
@@ -1481,20 +1512,33 @@ export default function TourDetailPage() {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {memberships.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={showActionColumn ? 9 : 8} align="center" sx={{ py: 4 }}>
-                        <Typography color="text.secondary">{t('no_passengers')}</Typography>
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    memberships.map((member) => {
+                  {(() => {
+                    const filteredMemberships = memberships.filter(m => {
+                      if (!searchQuery.trim()) return true;
+                      const query = searchQuery.toLowerCase().trim();
+                      const isGuest = !m.user_id;
+                      const name = (isGuest ? m.guest_info?.name : m.user_id?.name) || '';
+                      const phone = (isGuest ? m.guest_info?.phone : m.user_id?.phone) || '';
+                      return name.toLowerCase().includes(query) || phone.toLowerCase().includes(query);
+                    });
+
+                    if (filteredMemberships.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={showActionColumn ? 9 : 8} align="center" sx={{ py: 4 }}>
+                            <Typography color="text.secondary">{t('no_passengers')}</Typography>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+
+                    return filteredMemberships.map((member) => {
                       const isGuest = !member.user_id;
                       const name = isGuest ? member.guest_info?.name : member.user_id?.name;
                       const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
                       const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
-                      const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'male' : member.user_id?.gender === false ? 'female' : '');
-                      const genderLabel = genderRaw === 'male' ? 'Nam' : genderRaw === 'female' ? 'Nữ' : 'Khác';
+                      const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'true' : member.user_id?.gender === false ? 'false' : '');
+                      const genderLabel = (genderRaw === 'male' || String(genderRaw) === 'true') ? 'Nam' : (genderRaw === 'female' || String(genderRaw) === 'false') ? 'Nữ' : 'Khác';
                       const assignedVehicle = vehicles.find(v => v._id === member.vehicle_id);
 
                       const passengerGroupId = member.group_id?._id || member.group_id;
@@ -1604,8 +1648,8 @@ export default function TourDetailPage() {
                           )}
                         </TableRow>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -1614,18 +1658,31 @@ export default function TourDetailPage() {
           {/* Mobile Card View */}
           <Box sx={{ display: { xs: 'block', md: 'none' } }}>
             <Stack spacing={2}>
-              {memberships.length === 0 ? (
-                <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-                  <Typography color="text.secondary">{t('no_passengers')}</Typography>
-                </Paper>
-              ) : (
-                memberships.map((member) => {
+              {(() => {
+                const filteredMemberships = memberships.filter(m => {
+                  if (!searchQuery.trim()) return true;
+                  const query = searchQuery.toLowerCase().trim();
+                  const isGuest = !m.user_id;
+                  const name = (isGuest ? m.guest_info?.name : m.user_id?.name) || '';
+                  const phone = (isGuest ? m.guest_info?.phone : m.user_id?.phone) || '';
+                  return name.toLowerCase().includes(query) || phone.toLowerCase().includes(query);
+                });
+
+                if (filteredMemberships.length === 0) {
+                  return (
+                    <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
+                      <Typography color="text.secondary">{t('no_passengers')}</Typography>
+                    </Paper>
+                  );
+                }
+
+                return filteredMemberships.map((member) => {
                   const isGuest = !member.user_id;
                   const name = isGuest ? member.guest_info?.name : member.user_id?.name;
                   const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
                   const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
-                  const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'male' : member.user_id?.gender === false ? 'female' : '');
-                  const genderLabel = genderRaw === 'male' ? 'Nam' : genderRaw === 'female' ? 'Nữ' : 'Khác';
+                  const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'true' : member.user_id?.gender === false ? 'false' : '');
+                  const genderLabel = (genderRaw === 'male' || String(genderRaw) === 'true') ? 'Nam' : (genderRaw === 'female' || String(genderRaw) === 'false') ? 'Nữ' : 'Khác';
                   const assignedVehicle = vehicles.find(v => v._id === member.vehicle_id);
 
                   const passengerGroupId = member.group_id?._id || member.group_id;
@@ -1749,8 +1806,8 @@ export default function TourDetailPage() {
                       </CardContent>
                     </Card>
                   );
-                })
-              )}
+                });
+              })()}
             </Stack>
           </Box>
         </Grid>
@@ -3547,6 +3604,12 @@ export default function TourDetailPage() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ExcelImportModal
+        open={excelModalOpen}
+        onClose={() => setExcelModalOpen(false)}
+        tourId={id}
+        onImportSuccess={fetchTourData}
+      />
     </Box>
   );
 }

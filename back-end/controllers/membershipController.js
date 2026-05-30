@@ -203,3 +203,183 @@ exports.addMembersBatch = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.importExcel = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Không tìm thấy file tải lên.' });
+    }
+
+    const { id } = req.params;
+    const tour_id = id;
+    const Tour = require('../models/Tour');
+    const Group = require('../models/Group');
+    const tour = await Tour.findById(tour_id);
+    if (!tour) return res.status(404).json({ error: 'Không tìm thấy Tour.' });
+
+    // Business Rule 5: Cannot join after deadline
+    if (new Date() > new Date(tour.deadline)) {
+      return res.status(400).json({ error: 'Tour đã quá hạn đăng ký.' });
+    }
+
+    const xlsx = require('xlsx');
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (!rows || rows.length === 0) {
+      return res.status(400).json({ error: 'File Excel không có dữ liệu.' });
+    }
+
+    const validGenders = ['male', 'female', 'other'];
+    const validRoles = ['leader', 'group_rep', 'vehicle_rep', 'driver', 'member'];
+    const validCustomerTypes = ['adult', 'child', 'elderly'];
+
+    const parsedData = [];
+    const errors = [];
+
+    // Parse and validate rows
+    rows.forEach((row, index) => {
+      const rowIndex = index + 2; // Assuming row 1 is header
+
+      // Support matching exact headers from template
+      const name = row['Họ và tên (bắt buộc)'] || row['Họ và tên'] || row['name'];
+      const phone = row['Số điện thoại'] || row['phone'];
+      const birthYearRaw = row['Năm sinh'] || row['birth_year'];
+      const genderRaw = row['Giới tính'] || row['gender'];
+      const roleRaw = row['Vai trò'] || row['role'];
+      const customerTypeRaw = row['Loại khách'] || row['customer_type'];
+      const groupName = row['Tên nhóm'] || row['group_name'];
+      const note = row['Ghi chú'] || row['note'];
+
+      if (!name || name.toString().trim() === '') {
+        errors.push(`Dòng ${rowIndex}: Thiếu Họ và tên.`);
+        return;
+      }
+
+      const genderMap = { 'nam': 'true', 'nữ': 'false' };
+      const roleMap = { 'trưởng đoàn': 'leader', 'đại diện nhóm': 'group_rep', 'đại diện xe': 'vehicle_rep', 'tài xế': 'driver', 'thành viên': 'member' };
+      const customerTypeMap = { 'người lớn': 'adult', 'trẻ em': 'child', 'người cao tuổi': 'elderly' };
+
+      const genderKey = genderRaw ? genderRaw.toString().toLowerCase().trim() : 'nam';
+      const gender = genderMap[genderKey];
+      if (!gender) {
+        errors.push(`Dòng ${rowIndex}: Giới tính không hợp lệ (${genderRaw}). Vui lòng chọn Nam hoặc Nữ.`);
+      }
+
+      const roleKey = roleRaw ? roleRaw.toString().toLowerCase().trim() : 'thành viên';
+      const role = roleMap[roleKey];
+      if (!role) {
+        errors.push(`Dòng ${rowIndex}: Vai trò không hợp lệ (${roleRaw}).`);
+      }
+
+      const customerTypeKey = customerTypeRaw ? customerTypeRaw.toString().toLowerCase().trim() : 'người lớn';
+      const customerType = customerTypeMap[customerTypeKey];
+      if (!customerType) {
+        errors.push(`Dòng ${rowIndex}: Loại khách không hợp lệ (${customerTypeRaw}).`);
+      }
+
+      const birth_year = birthYearRaw ? Number(birthYearRaw) : undefined;
+      if (birthYearRaw && isNaN(birth_year)) {
+        errors.push(`Dòng ${rowIndex}: Năm sinh không hợp lệ.`);
+      }
+
+      parsedData.push({
+        rowIndex,
+        name: name.toString().trim(),
+        phone: phone ? phone.toString().trim() : '',
+        birth_year,
+        gender,
+        role,
+        customer_type: customerType,
+        group_name: groupName ? groupName.toString().trim() : '',
+        note: note ? note.toString().trim() : ''
+      });
+    });
+
+    if (errors.length > 0) {
+      return res.status(400).json({ error: 'Dữ liệu không hợp lệ', details: errors });
+    }
+
+    // Capacity Limit check
+    const currentMemberCount = await Membership.countDocuments({ 
+      tour_id, 
+      status: { $in: ['pending', 'approved'] } 
+    });
+
+    if (currentMemberCount + parsedData.length > tour.max_capacity) {
+      return res.status(400).json({ error: `Tour không đủ sức chứa! Chỉ còn ${tour.max_capacity - currentMemberCount} ghế trống.` });
+    }
+
+    // Group logic
+    const groupsMap = {}; // { group_name: { groupId, members: [] } }
+    
+    // Pass 1: Identify unique groups and create Group documents
+    const uniqueGroupNames = [...new Set(parsedData.map(d => d.group_name).filter(name => name !== ''))];
+    
+    for (const gName of uniqueGroupNames) {
+      const group = new Group({ tour_id, name: gName });
+      await group.save();
+      groupsMap[gName] = { groupId: group._id, hasRep: false };
+    }
+
+    // Pass 2: Prepare memberships for bulk insert
+    const membershipsToInsert = [];
+    const representativeUpdates = []; // To update groups with their reps later
+
+    for (const item of parsedData) {
+      let finalRole = item.role;
+      let finalGroupId = null;
+
+      if (item.group_name && groupsMap[item.group_name]) {
+        finalGroupId = groupsMap[item.group_name].groupId;
+        
+        // Handle only 1 group_rep per group logic
+        if (finalRole === 'group_rep') {
+          if (!groupsMap[item.group_name].hasRep) {
+            groupsMap[item.group_name].hasRep = true;
+            // We will set this membership as representative after insertion
+          } else {
+            // Already has a rep, fallback to member
+            finalRole = 'member';
+          }
+        }
+      }
+
+      const membershipDoc = {
+        tour_id,
+        user_id: null,
+        guest_info: {
+          name: item.name,
+          phone: item.phone,
+          birth_year: item.birth_year,
+          gender: item.gender
+        },
+        role: finalRole,
+        is_driver: finalRole === 'driver',
+        customer_type: item.customer_type,
+        group_id: finalGroupId,
+        note: item.note,
+        status: 'pending' // Or approved depending on business rules, let's keep it pending for now
+      };
+      
+      membershipsToInsert.push(membershipDoc);
+    }
+
+    const insertedMemberships = await Membership.insertMany(membershipsToInsert);
+
+    // Pass 3: Set group representatives
+    for (const member of insertedMemberships) {
+      if (member.role === 'group_rep' && member.group_id) {
+        await Group.findByIdAndUpdate(member.group_id, { representative_id: member._id });
+      }
+    }
+
+    res.status(201).json({ success: true, message: 'Nhập danh sách hành khách thành công!', count: insertedMemberships.length });
+
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+

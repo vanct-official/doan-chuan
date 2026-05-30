@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Route handlers 
 const tourController = require('../controllers/tourController');
@@ -383,6 +385,36 @@ router.put('/members/:id', authMiddleware, membershipController.updateMember);
 router.delete('/members/:id', authMiddleware, membershipController.deleteMember);
 router.post('/members/:id/leave', authMiddleware, membershipController.leaveTour);
 router.post('/members/batch', authMiddleware, membershipController.addMembersBatch);
+
+/**
+ * @swagger
+ * /tours/{id}/import-excel:
+ *   post:
+ *     summary: Import members via Excel
+ *     tags: [Memberships]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Imported successfully
+ *       400:
+ *         description: Bad request (invalid data)
+ */
+router.post('/tours/:id/import-excel', authMiddleware, upload.single('file'), membershipController.importExcel);
 
 /**
  * @swagger
