@@ -347,9 +347,18 @@ exports.importExcel = async (req, res) => {
         }
       }
 
+      // Try to find if user already exists
+      let existingUserId = null;
+      if (item.phone) {
+        const user = await User.findOne({ phone: item.phone });
+        if (user) {
+          existingUserId = user._id;
+        }
+      }
+
       const membershipDoc = {
         tour_id,
-        user_id: null,
+        user_id: existingUserId,
         guest_info: {
           name: item.name,
           phone: item.phone,

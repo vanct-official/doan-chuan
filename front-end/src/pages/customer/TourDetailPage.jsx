@@ -279,8 +279,8 @@ export default function TourDetailPage() {
     try {
       const response = await tourService.updateTour(id, {
         name: tourForm.name,
-        start_time: tourForm.start_time,
-        end_time: tourForm.end_time,
+        start_time: tourForm.start_time ? new Date(tourForm.start_time).toISOString() : '',
+        end_time: tourForm.end_time ? new Date(tourForm.end_time).toISOString() : '',
         max_capacity: Number(tourForm.max_capacity)
       });
       if (response.success) {
@@ -978,12 +978,16 @@ export default function TourDetailPage() {
     setActionError('');
     setActionSuccess('');
     try {
+      const payload = {
+        ...itineraryForm,
+        date: itineraryForm.date ? new Date(itineraryForm.date).toISOString() : ''
+      };
       if (editItineraryId) {
-        const res = await itineraryService.updateItinerary(editItineraryId, itineraryForm);
+        const res = await itineraryService.updateItinerary(editItineraryId, payload);
         setItineraries(itineraries.map(i => i._id === editItineraryId ? res.itinerary : i));
         setActionSuccess('Đã cập nhật lịch trình!');
       } else {
-        const res = await itineraryService.createItinerary({ ...itineraryForm, tour_id: id });
+        const res = await itineraryService.createItinerary({ ...payload, tour_id: id });
         setItineraries([...itineraries, res.itinerary].sort((a, b) => new Date(a.date) - new Date(b.date)));
         setActionSuccess('Đã thêm lịch trình mới!');
       }

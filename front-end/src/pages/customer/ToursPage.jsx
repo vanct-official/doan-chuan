@@ -105,9 +105,9 @@ export const ToursPage = () => {
     try {
       await tourService.createTour({
         name: tourForm.name,
-        start_time: tourForm.start_time,
-        end_time: tourForm.end_time,
-        deadline: tourForm.start_time, // deadline is equal to start_time
+        start_time: tourForm.start_time ? new Date(tourForm.start_time).toISOString() : '',
+        end_time: tourForm.end_time ? new Date(tourForm.end_time).toISOString() : '',
+        deadline: tourForm.start_time ? new Date(tourForm.start_time).toISOString() : '', // deadline is equal to start_time
         max_capacity: Number(tourForm.max_capacity),
         leader_id: userId
       });

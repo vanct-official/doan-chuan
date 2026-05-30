@@ -2,6 +2,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
+const Membership = require('../models/Membership');
 
 exports.register = async (req, res) => {
   try {
@@ -28,6 +29,14 @@ exports.register = async (req, res) => {
     });
 
     await newUser.save();
+
+    // Link any guest memberships with this phone number to the new user
+    if (phone) {
+      await Membership.updateMany(
+        { 'guest_info.phone': phone, user_id: null },
+        { $set: { user_id: newUser._id } }
+      );
+    }
 
     res.status(201).json({ message: 'Đăng ký thành công!' });
   } catch (error) {
@@ -209,6 +218,14 @@ exports.updateProfile = async (req, res) => {
       { name, phone, dob, gender },
       { new: true, runValidators: true }
     ).select('-password');
+
+    // Link any guest memberships with this updated phone number to the user
+    if (phone) {
+      await Membership.updateMany(
+        { 'guest_info.phone': phone, user_id: null },
+        { $set: { user_id: updatedUser._id } }
+      );
+    }
 
     const rawUser = await User.findById(userId);
     const hasPassword = !!rawUser.password;
