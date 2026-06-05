@@ -3,10 +3,12 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const Membership = require('../models/Membership');
+const { normalizePhone } = require('../utils/phoneUtils');
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, password, gender, dateOfBirth } = req.body;
+    let { name, email, phone, password, gender, dateOfBirth } = req.body;
+    phone = normalizePhone(phone);
     
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -33,8 +35,8 @@ exports.register = async (req, res) => {
     // Link any guest memberships with this phone number to the new user
     if (phone) {
       await Membership.updateMany(
-        { 'guest_info.phone': phone, user_id: null },
-        { $set: { user_id: newUser._id } }
+        { phone: phone, user_id: null },
+        { $set: { user_id: newUser._id, is_guest: false } }
       );
     }
 
@@ -47,7 +49,8 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { phone, password } = req.body;
+    let { phone, password } = req.body;
+    phone = normalizePhone(phone);
 
     // Check user
     const user = await User.findOne({ phone });
@@ -206,7 +209,8 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, phone, dob, gender } = req.body;
+    let { name, phone, dob, gender } = req.body;
+    phone = normalizePhone(phone);
     const userId = req.user._id;
 
     if (!name) {
@@ -222,8 +226,8 @@ exports.updateProfile = async (req, res) => {
     // Link any guest memberships with this updated phone number to the user
     if (phone) {
       await Membership.updateMany(
-        { 'guest_info.phone': phone, user_id: null },
-        { $set: { user_id: updatedUser._id } }
+        { phone: phone, user_id: null },
+        { $set: { user_id: updatedUser._id, is_guest: false } }
       );
     }
 
@@ -296,7 +300,8 @@ exports.changePassword = async (req, res) => {
 
 exports.checkPhone = async (req, res) => {
   try {
-    const { phone } = req.params;
+    let { phone } = req.params;
+    phone = normalizePhone(phone);
     if (!phone) {
       return res.status(400).json({ error: 'Phone number is required' });
     }

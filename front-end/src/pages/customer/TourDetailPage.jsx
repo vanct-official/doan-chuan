@@ -3098,9 +3098,29 @@ export default function TourDetailPage() {
               )}
 
               {/* Passenger checklist */}
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1, fontWeight: 'bold' }}>
-                Chọn hành khách chưa xếp xe:
-              </Typography>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 'bold' }}>
+                  Chọn hành khách chưa xếp xe:
+                </Typography>
+                {(() => {
+                  const assignedCount = memberships.filter(m => m.vehicle_id === activeVehicleForPassengers._id && m.status !== 'left').length;
+                  const remainingSeats = activeVehicleForPassengers.seat_count - assignedCount;
+                  if (unassignedMembers.length > 0 && unassignedMembers.length <= remainingSeats) {
+                    return (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => setSelectedUnassignedIds(unassignedMembers.map(m => m._id))}
+                        sx={{ py: 0.25, px: 1, textTransform: 'none', fontSize: '0.75rem', fontWeight: 'bold', borderRadius: 2 }}
+                      >
+                        Chọn tất cả ({unassignedMembers.length} người)
+                      </Button>
+                    );
+                  }
+                  return null;
+                })()}
+              </Stack>
               {unassignedMembers.length === 0 ? (
                 <Alert severity="info" sx={{ mb: 2, py: 1 }}>Tất cả hành khách trong tour đã được xếp xe!</Alert>
               ) : (

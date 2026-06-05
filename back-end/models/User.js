@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { normalizePhone } = require('../utils/phoneUtils');
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -11,5 +12,13 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['admin', 'customer'], default: 'customer' },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
+
+// Chuẩn hóa số điện thoại trước khi lưu
+userSchema.pre('save', function(next) {
+  if (this.phone) {
+    this.phone = normalizePhone(this.phone);
+  }
+  next();
+});
 
 module.exports = mongoose.model('User', userSchema);

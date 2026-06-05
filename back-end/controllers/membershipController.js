@@ -1,6 +1,7 @@
 const Membership = require('../models/Membership');
 const Tour = require('../models/Tour');
 const User = require('../models/User');
+const { normalizePhone } = require('../utils/phoneUtils');
 
 exports.addMember = async (req, res) => {
   try {
@@ -31,11 +32,29 @@ exports.addMember = async (req, res) => {
        // E.g., we do not allow edits of dob/gender here for existing users (Business Rule 6).
     }
 
+    let finalUserId = user_id;
+    let finalGuestInfo = guest_info;
+
+    if (!finalUserId && finalGuestInfo && finalGuestInfo.phone) {
+      finalGuestInfo.phone = normalizePhone(finalGuestInfo.phone);
+      const existingUser = await User.findOne({ phone: finalGuestInfo.phone });
+      if (existingUser) {
+        finalUserId = existingUser._id;
+      }
+    }
+
     const membership = new Membership({
-      tour_id, user_id, guest_info, role, is_driver: is_driver || false, customer_type, group_id, vehicle_id, note, status: 'pending' 
+      tour_id, user_id: finalUserId, guest_info: finalGuestInfo, role, is_driver: is_driver || false, customer_type, group_id, vehicle_id, note, status: 'pending' 
     });
     
-    await membership.save();
+    try {
+      await membership.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(400).json({ error: 'Số điện thoại này đã được thêm vào tour!' });
+      }
+      throw err;
+    }
     res.status(201).json({ message: 'Member added successfully', membership });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -76,13 +95,28 @@ exports.updateMember = async (req, res) => {
     if (guest_info && !membership.user_id) {
       membership.guest_info = {
         name: guest_info.name || membership.guest_info.name,
-        phone: guest_info.phone || membership.guest_info.phone,
+        phone: guest_info.phone ? normalizePhone(guest_info.phone) : membership.guest_info.phone,
         birth_year: guest_info.birth_year !== undefined ? Number(guest_info.birth_year) : membership.guest_info.birth_year,
         gender: guest_info.gender || membership.guest_info.gender
       };
+      
+      if (membership.guest_info.phone) {
+        const existingUser = await User.findOne({ phone: membership.guest_info.phone });
+        if (existingUser) {
+          membership.user_id = existingUser._id;
+          membership.is_guest = false;
+        }
+      }
     }
 
-    await membership.save();
+    try {
+      await membership.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(400).json({ error: 'Số điện thoại này đã tồn tại trong tour (trùng lặp)!' });
+      }
+      throw err;
+    }
     res.status(200).json({ success: true, message: 'Membership updated successfully', membership });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -169,25 +203,41 @@ exports.addMembersBatch = async (req, res) => {
       newGroupId = group._id;
     }
 
-    const createdMemberships = [];
     for (const item of members) {
+      let finalUserId = item.user_id || null;
+      let finalGuestInfo = item.user_id ? null : {
+        name: item.name ? item.name.trim() : '',
+        phone: item.phone ? normalizePhone(item.phone) : '',
+        birth_year: item.birth_year ? Number(item.birth_year) : undefined,
+        gender: item.gender || 'male'
+      };
+
+      if (!finalUserId && finalGuestInfo && finalGuestInfo.phone) {
+        const existingUser = await User.findOne({ phone: finalGuestInfo.phone });
+        if (existingUser) {
+          finalUserId = existingUser._id;
+        }
+      }
+
       const membership = new Membership({
         tour_id,
-        user_id: item.user_id || null,
-        guest_info: item.user_id ? null : {
-          name: item.name ? item.name.trim() : '',
-          phone: item.phone ? item.phone.trim() : '',
-          birth_year: item.birth_year ? Number(item.birth_year) : undefined,
-          gender: item.gender || 'male'
-        },
+        user_id: finalUserId,
+        guest_info: finalGuestInfo,
         role: item.role || 'member',
         is_driver: item.is_driver || false,
         customer_type: item.customer_type || 'adult',
         group_id: newGroupId || item.group_id || null,
         status: 'pending'
       });
-      await membership.save();
-      createdMemberships.push(membership);
+      try {
+        await membership.save();
+        createdMemberships.push(membership);
+      } catch (err) {
+        if (err.code === 11000) {
+          return res.status(400).json({ error: `Số điện thoại ${finalGuestInfo ? finalGuestInfo.phone : ''} đã có trong tour, bị trùng lặp!` });
+        }
+        throw err;
+      }
     }
 
     // Set first passenger as group representative
@@ -350,6 +400,7 @@ exports.importExcel = async (req, res) => {
       // Try to find if user already exists
       let existingUserId = null;
       if (item.phone) {
+        item.phone = normalizePhone(item.phone);
         const user = await User.findOne({ phone: item.phone });
         if (user) {
           existingUserId = user._id;
@@ -376,7 +427,16 @@ exports.importExcel = async (req, res) => {
       membershipsToInsert.push(membershipDoc);
     }
 
-    const insertedMemberships = await Membership.insertMany(membershipsToInsert);
+    let insertedMemberships = [];
+    try {
+      insertedMemberships = await Membership.insertMany(membershipsToInsert, { ordered: false });
+    } catch (err) {
+      if (err.code === 11000) {
+        // Some duplicates, but ordered: false allows others to succeed
+        return res.status(400).json({ error: 'Một số hành khách đã tồn tại trong tour do trùng lặp số điện thoại!' });
+      }
+      throw err;
+    }
 
     // Pass 3: Set group representatives
     for (const member of insertedMemberships) {
