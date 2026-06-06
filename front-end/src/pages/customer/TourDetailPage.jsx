@@ -38,6 +38,7 @@ import { authService } from '../../services/authService';
 import { itineraryService } from '../../services/itineraryService';
 import { attendanceService } from '../../services/attendanceService';
 import ExcelImportModal from '../../components/ExcelImportModal';
+import { formatForDateTimeLocal, parseDateTimeLocalToISO } from '../../utils/dateUtils';
 
 // Helper function to generate avatar color and initials from name
 function stringToColor(string) {
@@ -253,17 +254,11 @@ export default function TourDetailPage() {
   // 1. EDIT TOUR HANDLERS
   const handleOpenEditTour = () => {
     if (!tour) return;
-    const formatDate = (dateStr) => {
-      if (!dateStr) return '';
-      const d = new Date(dateStr);
-      const pad = (num) => String(num).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
 
     setTourForm({
       name: tour.name || '',
-      start_time: formatDate(tour.start_time),
-      end_time: formatDate(tour.end_time),
+      start_time: formatForDateTimeLocal(tour.start_time),
+      end_time: formatForDateTimeLocal(tour.end_time),
       max_capacity: tour.max_capacity || ''
     });
     setActionError('');
@@ -279,8 +274,8 @@ export default function TourDetailPage() {
     try {
       const response = await tourService.updateTour(id, {
         name: tourForm.name,
-        start_time: tourForm.start_time ? new Date(tourForm.start_time).toISOString() : '',
-        end_time: tourForm.end_time ? new Date(tourForm.end_time).toISOString() : '',
+        start_time: parseDateTimeLocalToISO(tourForm.start_time),
+        end_time: parseDateTimeLocalToISO(tourForm.end_time),
         max_capacity: Number(tourForm.max_capacity)
       });
       if (response.success) {
