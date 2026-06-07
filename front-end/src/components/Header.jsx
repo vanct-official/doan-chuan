@@ -10,6 +10,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useTranslation } from 'react-i18next';
 import { useColorMode } from '../theme/ThemeContext';
+import { InstallPwaButton } from './pwa/InstallPwaButton';
 
 export const Header = ({ onMenuClick }) => {
   const { t, i18n } = useTranslation();
@@ -84,6 +85,10 @@ export const Header = ({ onMenuClick }) => {
         {t('app_title')}
       </Typography>
       <Divider />
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <InstallPwaButton variant="contained" size="small" />
+      </Box>
+      <Divider />
       <List>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate('/')}>
@@ -151,7 +156,8 @@ export const Header = ({ onMenuClick }) => {
           {t('app_title')}
         </Typography>
 
-        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+        <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+          <InstallPwaButton variant="outlined" size="small" />
           <Button color="inherit" onClick={() => handleNavigate('/')}>{t('menu_home')}</Button>
           <Button color="inherit" onClick={() => handleNavigate('/tours')}>{t('menu_tours')}</Button>
           {user && user.role === 'admin' && (

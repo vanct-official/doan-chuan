@@ -23,6 +23,7 @@ const gradients = [
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { tourService } from '../../services/tourService';
+import { offlineApi } from '../../services/offlineApi';
 import { toUTC } from '../../utils/dateUtils';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -34,6 +35,7 @@ export const ToursPage = () => {
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOfflineData, setIsOfflineData] = useState(false);
 
   // States for Create Tour Modal (for customers)
   const [openModal, setOpenModal] = useState(false);
@@ -55,10 +57,12 @@ export const ToursPage = () => {
     try {
       let response;
       if (user) {
-        // Chỉ lấy tour mà user có trong danh sách hành khách / là creator / leader
-        response = await tourService.getMyTours();
+        const { data, fromCache } = await offlineApi.getMyTours();
+        response = data;
+        setIsOfflineData(fromCache);
       } else {
         response = await tourService.getAllTours();
+        setIsOfflineData(false);
       }
       setTours(response.data || []);
       setError(null);
@@ -151,6 +155,12 @@ export const ToursPage = () => {
           </Button>
         )}
       </Box>
+
+      {isOfflineData && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          Danh sách tour từ cache — kết nối mạng để cập nhật mới nhất
+        </Alert>
+      )}
 
       {user && (
         <Button 

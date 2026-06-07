@@ -43,8 +43,7 @@ import { vehicleService } from '../../services/vehicleService';
 import { membershipService } from '../../services/membershipService';
 import { groupService } from '../../services/groupService';
 import { authService } from '../../services/authService';
-import { itineraryService } from '../../services/itineraryService';
-import { attendanceService } from '../../services/attendanceService';
+import { offlineApi } from '../../services/offlineApi';
 import ExcelImportModal from '../../components/ExcelImportModal';
 import { formatForDateTimeLocal, parseDateTimeLocalToISO } from '../../utils/dateUtils';
 
@@ -89,6 +88,7 @@ export default function TourDetailPage() {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isOfflineData, setIsOfflineData] = useState(false);
 
   // Modals state
   const [editTourOpen, setEditTourOpen] = useState(false);
@@ -175,7 +175,8 @@ export default function TourDetailPage() {
 
   const fetchTourData = async () => {
     try {
-      const response = await tourService.getTourById(id, statusFilter);
+      const { data: response, fromCache } = await offlineApi.getTourById(id, statusFilter);
+      setIsOfflineData(fromCache);
       if (response.success) {
         setTour(response.tour);
 
@@ -211,12 +212,12 @@ export default function TourDetailPage() {
         setGroups(groupRes.groups || []);
       }
       
-      // Fetch itineraries & attendances
+      // Fetch itineraries & attendances (có cache offline)
       try {
-        const itinRes = await itineraryService.getItinerariesByTour(id);
+        const { data: itinRes } = await offlineApi.getItinerariesByTour(id);
         setItineraries(itinRes || []);
-        
-        const attRes = await attendanceService.getAttendanceByTour(id);
+
+        const { data: attRes } = await offlineApi.getAttendanceByTour(id);
         setTourAttendances(attRes || []);
       } catch (e) {
         console.error('Failed to fetch itineraries', e);
@@ -992,13 +993,21 @@ export default function TourDetailPage() {
         date: itineraryForm.date ? new Date(itineraryForm.date).toISOString() : ''
       };
       if (editItineraryId) {
-        const res = await itineraryService.updateItinerary(editItineraryId, payload);
-        setItineraries(itineraries.map(i => i._id === editItineraryId ? res.itinerary : i));
-        setActionSuccess('Da cap nhat lich trinh!');
+        const result = await offlineApi.updateItinerary(editItineraryId, payload);
+        if (result.queued) {
+          setActionSuccess('Da luu offline — se dong bo khi co mang!');
+        } else {
+          setItineraries(itineraries.map(i => i._id === editItineraryId ? result.data.itinerary : i));
+          setActionSuccess('Da cap nhat lich trinh!');
+        }
       } else {
-        const res = await itineraryService.createItinerary({ ...payload, tour_id: id });
-        setItineraries([...itineraries, res.itinerary].sort((a, b) => new Date(a.date) - new Date(b.date)));
-        setActionSuccess('Da them lich trinh moi!');
+        const result = await offlineApi.createItinerary({ ...payload, tour_id: id });
+        if (result.queued) {
+          setActionSuccess('Da luu offline — se dong bo khi co mang!');
+        } else {
+          setItineraries([...itineraries, result.data.itinerary].sort((a, b) => new Date(a.date) - new Date(b.date)));
+          setActionSuccess('Da them lich trinh moi!');
+        }
       }
       setTimeout(() => {
         setItineraryModalOpen(false);
@@ -1016,8 +1025,13 @@ export default function TourDetailPage() {
   const handleDeleteItinerary = async (itineraryId) => {
     if (!window.confirm('Ban co chac chan muon xoa moc lich trinh nay?')) return;
     try {
-      await itineraryService.deleteItinerary(itineraryId);
-      setItineraries(itineraries.filter(i => i._id !== itineraryId));
+      const result = await offlineApi.deleteItinerary(itineraryId);
+      if (!result.queued) {
+        setItineraries(itineraries.filter(i => i._id !== itineraryId));
+      } else {
+        setItineraries(itineraries.filter(i => i._id !== itineraryId));
+        alert('Da xoa offline — se dong bo khi co mang!');
+      }
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     }
@@ -1035,14 +1049,14 @@ export default function TourDetailPage() {
         const allData = [];
         for (const vId of vehicleIds) {
           try {
-            const res = await attendanceService.getAttendance(itinerary._id, vId);
+            const { data: res } = await offlineApi.getAttendance(itinerary._id, vId);
             allData.push(...res.map(a => ({ membership_id: a.membership_id, status: a.status })));
           } catch (_) {}
         }
         setAttendanceData(allData);
       } else if (myMembership?.vehicle_id) {
         const vId = myMembership.vehicle_id?._id || myMembership.vehicle_id;
-        const res = await attendanceService.getAttendance(itinerary._id, vId);
+        const { data: res } = await offlineApi.getAttendance(itinerary._id, vId);
         setAttendanceData(res.map(a => ({ membership_id: a.membership_id, status: a.status })));
       }
     } catch (err) {
@@ -1090,7 +1104,7 @@ export default function TourDetailPage() {
             const ex = attendanceData.find(a => a.membership_id === m._id);
             return { membership_id: m._id, status: ex?.status || 'absent' };
           });
-          return attendanceService.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: vehicleId, attendances });
+          return offlineApi.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: vehicleId, attendances });
         }));
         setTourAttendances(prev => [
           ...prev.filter(a => (a.itinerary_id?._id || a.itinerary_id) !== selectedItinerary._id),
@@ -1108,14 +1122,16 @@ export default function TourDetailPage() {
           const ex = attendanceData.find(a => a.membership_id === m._id);
           return { membership_id: m._id, status: ex?.status || 'absent' };
         });
-        await attendanceService.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: myVId, attendances });
+        await offlineApi.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: myVId, attendances });
         setTourAttendances(prev => [
           ...prev.filter(a => !((a.itinerary_id?._id || a.itinerary_id) === selectedItinerary._id && (a.vehicle_id?._id || a.vehicle_id) === myVId)),
           ...attendances.map(f => ({ itinerary_id: selectedItinerary._id, vehicle_id: myVId, membership_id: f.membership_id, status: f.status }))
         ]);
       }
       setAttendanceModalOpen(false);
-      alert('Da luu diem danh thanh cong!');
+      alert(!navigator.onLine
+        ? 'Da luu offline — se dong bo khi co mang!'
+        : 'Da luu diem danh thanh cong!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     } finally {
@@ -1232,6 +1248,12 @@ export default function TourDetailPage() {
           </Avatar>
         </Stack>
       </Box>
+
+      {isOfflineData && (
+        <Alert severity="info" sx={{ borderRadius: 0 }}>
+          Dữ liệu từ bộ nhớ cache — có thể chưa cập nhật mới nhất
+        </Alert>
+      )}
 
       {/* 2. MAIN SCROLLABLE CONTENT (TABS) */}
       <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative', pb: 10 }}>
