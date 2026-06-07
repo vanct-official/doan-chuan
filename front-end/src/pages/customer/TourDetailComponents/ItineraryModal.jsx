@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 
 const ItineraryModal = ({
   open,
@@ -23,7 +23,7 @@ const ItineraryModal = ({
       <DialogContent>
         <form id="itineraryForm" onSubmit={handleSaveItinerary}>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DateTimePicker
+            <MobileDateTimePicker
               label="Thời gian"
               value={itineraryForm.date}
               onChange={(newValue) => setItineraryForm({ ...itineraryForm, date: newValue })}

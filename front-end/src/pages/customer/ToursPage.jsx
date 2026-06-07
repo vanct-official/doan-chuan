@@ -27,7 +27,7 @@ import { offlineApi } from '../../services/offlineApi';
 import { toUTC } from '../../utils/dateUtils';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 
 export const ToursPage = () => {
   const { t } = useTranslation();
@@ -340,7 +340,7 @@ export const ToursPage = () => {
               autoFocus
             />
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateTimePicker
+              <MobileDateTimePicker
                 label={t('tour_start_time')}
                 value={tourForm.start_time}
                 onChange={(newValue) => setTourForm({ ...tourForm, start_time: newValue })}
@@ -349,7 +349,7 @@ export const ToursPage = () => {
                   textField: { margin: 'normal', required: true, fullWidth: true }
                 }}
               />
-              <DateTimePicker
+              <MobileDateTimePicker
                 label={t('tour_end_time')}
                 value={tourForm.end_time}
                 onChange={(newValue) => setTourForm({ ...tourForm, end_time: newValue })}
