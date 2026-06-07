@@ -11,8 +11,13 @@ import {
   InputLabel, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, LinearProgress, Stack, IconButton,
   Divider, Tooltip, Tabs, Tab, Avatar, AvatarGroup, Checkbox, FormControlLabel, TableSortLabel,
-  BottomNavigation, BottomNavigationAction, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon
+  BottomNavigation, BottomNavigationAction, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon,
+  useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import {
+  accentGradient, attendanceAvatarBorder, attendanceMemberSx, groupHeaderColors,
+} from './tourDetailTheme';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
@@ -81,6 +86,7 @@ export default function TourDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const theme = useTheme();
 
   const [tour, setTour] = useState(null);
   const [memberships, setMemberships] = useState([]);
@@ -177,6 +183,10 @@ export default function TourDetailPage() {
     try {
       const { data: response, fromCache } = await offlineApi.getTourById(id, statusFilter);
       setIsOfflineData(fromCache);
+      if (!response) {
+        setError('Không thể tải dữ liệu tour');
+        return;
+      }
       if (response.success) {
         setTour(response.tour);
 
@@ -1161,7 +1171,16 @@ export default function TourDetailPage() {
     );
   }
 
-  if (!tour) return null;
+  if (!tour) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', minHeight: '100vh' }}>
+        <Typography color="text.secondary">Không có dữ liệu tour.</Typography>
+        <Button sx={{ mt: 2 }} onClick={handleBack} startIcon={<ArrowBackIcon />}>
+          Quay lại
+        </Button>
+      </Box>
+    );
+  }
 
   // Compute overall stats
   const activeMembersCount = memberships.filter(m => m.status === 'approved' || m.status === 'pending').length;
@@ -1223,7 +1242,7 @@ export default function TourDetailPage() {
   const canEditItinerary = isLeaderOrCreator || isAdminPath;
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc', overflow: 'hidden' }}>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', overflow: 'hidden' }}>
       
       {/* 1. COMPACT HEADER */}
       <Box sx={{ 
@@ -1394,7 +1413,7 @@ export default function TourDetailPage() {
       )}
 
       {/* 4. BOTTOM NAVIGATION */}
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20 }} elevation={8}>
+      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, bgcolor: 'background.paper' }} elevation={8}>
         <BottomNavigation
           showLabels
           value={bottomNavValue}
@@ -1472,10 +1491,10 @@ export default function TourDetailPage() {
         fullWidth
       >
         {/* Header */}
-        <Box sx={{ 
+        <Box sx={{
           px: 3, pt: 2.5, pb: 2,
-          background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
-          color: 'white'
+          background: accentGradient(theme),
+          color: 'white',
         }}>
           <Typography variant="h6" fontWeight={800}>📋 Điểm danh Hành khách</Typography>
           {selectedItinerary && (
@@ -1548,19 +1567,20 @@ export default function TourDetailPage() {
               }).length;
               const allPresent = groupPresentCount === gMembers.length;
 
+              const headerColors = groupHeaderColors(theme, key === '__none__');
               sections.push(
                 <Box key={key} sx={{ mb: 2 }}>
                   {/* Group header with quick-select */}
-                  <Box sx={{ 
+                  <Box sx={{
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     px: 1.5, py: 1, mb: 1,
-                    bgcolor: key === '__none__' ? '#f8fafc' : '#eff6ff',
+                    bgcolor: headerColors.bgcolor,
                     borderRadius: 2,
                     border: '1px solid',
-                    borderColor: key === '__none__' ? '#e2e8f0' : '#bfdbfe'
+                    borderColor: headerColors.borderColor,
                   }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="subtitle2" fontWeight={700} color={key === '__none__' ? 'text.secondary' : '#1d4ed8'}>
+                      <Typography variant="subtitle2" fontWeight={700} color={headerColors.titleColor}>
                         👥 {groupName}
                       </Typography>
                       <Chip 
@@ -1607,16 +1627,14 @@ export default function TourDetailPage() {
                           key={member._id} 
                           variant="outlined" 
                           onClick={() => handleToggleAttendance(member._id)}
-                          sx={{ 
-                            p: 1.5, 
-                            display: 'flex', alignItems: 'center', 
-                            justifyContent: 'space-between', 
+                          sx={{
+                            p: 1.5,
+                            display: 'flex', alignItems: 'center',
+                            justifyContent: 'space-between',
                             borderRadius: 2,
                             cursor: 'pointer',
-                            borderColor: isPresent ? '#86efac' : '#fca5a5',
-                            bgcolor: isPresent ? '#f0fdf4' : '#fff5f5',
                             transition: 'all 0.15s ease',
-                            '&:hover': { transform: 'scale(1.01)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+                            ...attendanceMemberSx(theme, isPresent),
                           }}
                         >
                           <Box display="flex" alignItems="center" gap={1.5}>
@@ -1626,7 +1644,7 @@ export default function TourDetailPage() {
                                 ...stringAvatar(name).sx, 
                                 width: 38, height: 38,
                                 border: '2px solid',
-                                borderColor: isPresent ? '#86efac' : '#fca5a5'
+                                borderColor: attendanceAvatarBorder(theme, isPresent)
                               }} 
                             />
                             <Box>
@@ -1662,7 +1680,7 @@ export default function TourDetailPage() {
           })()}
         </DialogContent>
 
-        <DialogActions sx={{ px: 2.5, py: 2, borderTop: '1px solid #e2e8f0' }}>
+        <DialogActions sx={{ px: 2.5, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
           <Button onClick={() => setAttendanceModalOpen(false)} color="inherit" variant="outlined" disabled={actionLoading}>
             Đóng
           </Button>
@@ -2249,25 +2267,25 @@ export default function TourDetailPage() {
                 >
                   <MenuItem value="pending">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b', flexShrink: 0 }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main', flexShrink: 0 }} />
                       Chờ duyệt (Pending)
                     </Box>
                   </MenuItem>
                   <MenuItem value="approved">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981', flexShrink: 0 }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'success.main', flexShrink: 0 }} />
                       Đã duyệt (Approved)
                     </Box>
                   </MenuItem>
                   <MenuItem value="rejected">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444', flexShrink: 0 }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'error.main', flexShrink: 0 }} />
                       Từ chối (Rejected)
                     </Box>
                   </MenuItem>
                   <MenuItem value="removed">
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#6b7280', flexShrink: 0 }} />
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'text.disabled', flexShrink: 0 }} />
                       Đã xóa (Removed)
                     </Box>
                   </MenuItem>
@@ -2627,9 +2645,9 @@ export default function TourDetailPage() {
               sx={{
                 p: 2.5,
                 mb: 3,
-                bgcolor: 'grey.50',
+                bgcolor: alpha(theme.palette.action.hover, 0.5),
                 border: '1px solid',
-                borderColor: 'grey.200',
+                borderColor: 'divider',
                 borderRadius: 3,
                 boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.05)'
               }}
@@ -2692,11 +2710,11 @@ export default function TourDetailPage() {
                     maxHeight: 280,
                     overflowY: 'auto',
                     border: '1px solid',
-                    borderColor: 'grey.300',
+                    borderColor: 'divider',
                     borderRadius: 2,
                     p: 1.5,
                     mb: 2.5,
-                    bgcolor: '#ffffff'
+                    bgcolor: 'background.paper'
                   }}
                 >
                   <Grid container spacing={1.5}>
@@ -2719,21 +2737,23 @@ export default function TourDetailPage() {
                               p: 1,
                               borderRadius: 1.5,
                               border: '1px solid',
-                              borderColor: isChecked ? 'success.main' : 'grey.300',
-                              bgcolor: isChecked ? 'success.50' : 'background.paper',
+                              borderColor: isChecked ? 'success.main' : 'divider',
+                              bgcolor: isChecked
+                                ? alpha(theme.palette.success.main, theme.palette.mode === 'dark' ? 0.2 : 0.08)
+                                : 'background.paper',
                               cursor: 'pointer',
                               height: '100%',
                               minWidth: 0,
                               width: '100%',
                               transition: 'all 0.2s ease-in-out',
-                              '&:hover': { bgcolor: 'action.hover', borderColor: isChecked ? 'success.main' : 'grey.400' }
+                              '&:hover': { bgcolor: 'action.hover', borderColor: isChecked ? 'success.main' : 'divider' }
                             }}
                           >
                             <input
                               type="checkbox"
                               checked={isChecked}
                               readOnly
-                              style={{ marginRight: 12, transform: 'scale(1.2)', cursor: 'pointer', accentColor: '#2e7d32' }}
+                              style={{ marginRight: 12, transform: 'scale(1.2)', cursor: 'pointer', accentColor: theme.palette.success.main }}
                             />
                             <Avatar {...stringAvatar(mName || 'Unknown')} sx={{ ...stringAvatar(mName || 'Unknown').sx, width: 28, height: 28, fontSize: '0.75rem', mr: 1.5 }} />
                             <Box sx={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
@@ -2831,7 +2851,7 @@ export default function TourDetailPage() {
               {/* Mobile View: Grid of Occupants */}
               <Box sx={{ display: { xs: 'block', md: 'none' } }}>
                 {memberships.filter(m => m.vehicle_id === activeVehicleForPassengers._id && m.status !== 'left').length === 0 ? (
-                  <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'grey.50', border: '1px dashed', borderColor: 'grey.300' }}>
+                  <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, bgcolor: 'action.hover', border: '1px dashed', borderColor: 'divider' }}>
                     <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>
                       Chưa có hành khách nào được xếp lên xe này.
                     </Typography>
@@ -2866,7 +2886,7 @@ export default function TourDetailPage() {
                                     {name}
                                   </Typography>
                                   {isGuest && (
-                                    <Chip label="GUEST" size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'grey.200', color: 'text.secondary', fontWeight: 'bold', mt: 0.5 }} />
+                                    <Chip label="GUEST" size="small" sx={{ fontSize: '0.6rem', height: 18, bgcolor: 'action.selected', color: 'text.secondary', fontWeight: 'bold', mt: 0.5 }} />
                                   )}
                                 </Box>
                               </Stack>
@@ -2903,7 +2923,10 @@ export default function TourDetailPage() {
                                       color="error" 
                                       onClick={() => handleRemoveMemberFromVehicle(member._id)}
                                       disabled={actionLoading}
-                                      sx={{ bgcolor: 'error.50', '&:hover': { bgcolor: 'error.100' } }}
+                                      sx={{
+                                        bgcolor: alpha(theme.palette.error.main, 0.1),
+                                        '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.18) },
+                                      }}
                                     >
                                       <RemoveCircleOutlineIcon fontSize="small" />
                                     </IconButton>
@@ -2923,7 +2946,7 @@ export default function TourDetailPage() {
               <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                 <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
                   <Table size="small">
-                    <TableHead sx={{ bgcolor: 'grey.50' }}>
+                    <TableHead sx={{ bgcolor: 'action.hover' }}>
                       <TableRow>
                         <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Họ tên</TableCell>
                         <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Số điện thoại</TableCell>
@@ -2965,8 +2988,8 @@ export default function TourDetailPage() {
                                           fontSize: '0.55rem',
                                           height: 16,
                                           width: 'fit-content',
-                                          bgcolor: '#eceff1',
-                                          color: '#37474f',
+                                          bgcolor: 'action.selected',
+                                          color: 'text.secondary',
                                           fontWeight: 'bold',
                                           mt: 0.25
                                         }}
@@ -3045,10 +3068,10 @@ export default function TourDetailPage() {
         {/* Gradient header */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)',
+            background: accentGradient(theme),
             px: 3,
             py: 2.5,
-            color: '#fff',
+            color: 'common.white',
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -3076,7 +3099,7 @@ export default function TourDetailPage() {
               <Box>
                 <Box
                   sx={{
-                    bgcolor: 'grey.50',
+                    bgcolor: 'action.hover',
                     border: '1.5px solid',
                     borderColor: inviteCopied ? 'success.main' : 'divider',
                     borderRadius: 2.5,
@@ -3104,8 +3127,8 @@ export default function TourDetailPage() {
                     sx={{
                       borderRadius: 2.5,
                       fontWeight: 'bold',
-                      bgcolor: inviteCopied ? 'success.main' : '#7c3aed',
-                      '&:hover': { bgcolor: inviteCopied ? 'success.dark' : '#6d28d9' },
+                      bgcolor: inviteCopied ? 'success.main' : 'primary.main',
+                      '&:hover': { bgcolor: inviteCopied ? 'success.dark' : 'primary.dark' },
                       transition: 'background-color 0.3s',
                     }}
                   >
@@ -3116,7 +3139,7 @@ export default function TourDetailPage() {
                     fullWidth
                     startIcon={<OpenInNewIcon />}
                     onClick={() => window.open(inviteLink, '_blank')}
-                    sx={{ borderRadius: 2.5, borderColor: '#7c3aed', color: '#7c3aed' }}
+                    sx={{ borderRadius: 2.5, borderColor: 'primary.main', color: 'primary.main' }}
                   >
                     Mở thử link
                   </Button>
@@ -3126,10 +3149,10 @@ export default function TourDetailPage() {
                   sx={{
                     mt: 2.5,
                     p: 1.5,
-                    bgcolor: 'warning.50',
+                    bgcolor: alpha(theme.palette.warning.main, theme.palette.mode === 'dark' ? 0.15 : 0.08),
                     borderRadius: 2,
                     border: '1px solid',
-                    borderColor: 'warning.light',
+                    borderColor: alpha(theme.palette.warning.main, 0.35),
                   }}
                 >
                   <Typography variant="caption" color="warning.dark">

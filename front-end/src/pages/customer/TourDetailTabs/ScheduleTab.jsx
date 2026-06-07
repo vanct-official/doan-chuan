@@ -1,6 +1,6 @@
 import React from 'react';
-import { 
-  Box, Typography, Card, CardActionArea, IconButton, Chip 
+import {
+  Box, Typography, Card, CardActionArea, IconButton, Chip, useTheme,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
@@ -18,6 +18,7 @@ export default function ScheduleTab({
   totalMembers
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
 
   return (
     <Box sx={{ p: 2, pb: 10, height: '100%', overflowY: 'auto' }}>
@@ -49,15 +50,18 @@ export default function ScheduleTab({
                 }}>
                   <Box sx={{ 
                     width: 16, height: 16, borderRadius: '50%', 
-                    bgcolor: 'primary.main', border: '3px solid white', 
-                    boxShadow: '0 0 0 1px #e2e8f0', zIndex: 2
+                    bgcolor: 'primary.main',
+                    border: '3px solid',
+                    borderColor: 'background.paper',
+                    boxShadow: `0 0 0 1px ${theme.palette.divider}`,
+                    zIndex: 2,
                   }} />
                 </Box>
 
                 <Card elevation={0} sx={{ 
                   flex: 1, borderRadius: 3, 
                   border: '1px solid', borderColor: 'divider',
-                  bgcolor: 'white'
+                  bgcolor: 'background.paper'
                 }}>
                   <CardActionArea onClick={() => onItineraryClick(itinerary)}>
                     <Box sx={{ p: 2 }}>

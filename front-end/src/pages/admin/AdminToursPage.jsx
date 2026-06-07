@@ -1,70 +1,87 @@
-import React, { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  Typography, Box, Paper, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow, Button, Chip, CircularProgress, Alert
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Typography,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { tourService } from '../../services/tourService';
+import { useTranslate } from '../../hooks/useTranslate';
 
 export const AdminToursPage = () => {
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslate(['tour', 'common']);
   const navigate = useNavigate();
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchTours = async () => {
-    setLoading(true);
+  const formatDate = (date) =>
+    new Intl.DateTimeFormat(currentLanguage === 'vi' ? 'vi-VN' : 'en-US').format(new Date(date));
+
+  const fetchTours = useCallback(async ({ showLoading = true } = {}) => {
+    if (showLoading) setLoading(true);
     try {
       const response = await tourService.getAllTours();
       setTours(response.data || []);
       setError(null);
     } catch (err) {
-      setError(err.message || 'Lỗi khi tải dữ liệu tour');
+      setError(err.message || t('tour.messages.loadError'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   const handleDeleteTour = async (id) => {
-    if (window.confirm(t('confirm_delete_tour') || 'Bạn có chắc chắn muốn xóa tour này? Tất cả dữ liệu liên quan (hành khách, xe...) sẽ bị xóa!')) {
-      try {
-        await tourService.deleteTour(id);
-        fetchTours();
-      } catch (err) {
-        setError(err.response?.data?.error || err.message || 'Lỗi khi xóa tour');
-      }
+    if (!window.confirm(t('tour.messages.confirmDelete'))) return;
+
+    try {
+      await tourService.deleteTour(id);
+      fetchTours();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message || t('tour.messages.deleteError'));
     }
   };
 
   useEffect(() => {
-    fetchTours();
-  }, []);
+    const timer = window.setTimeout(() => {
+      fetchTours({ showLoading: false });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchTours]);
 
   return (
     <Box>
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{t('admin_tours_title')}</Typography>
-        <Button variant="contained" color="primary" startIcon={<AddIcon />}>
-          {t('admin_tours_add')}
+        <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{t('tour.admin.title')}</Typography>
+        <Button variant="contained" color="primary" startIcon={<AddIcon />} sx={{ minHeight: 44 }}>
+          {t('tour.admin.add')}
         </Button>
       </Box>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {/* Desktop/Tablet Table View */}
       <Box sx={{ display: { xs: 'none', md: 'block' } }}>
         <TableContainer component={Paper} elevation={3}>
           <Table sx={{ minWidth: 650 }} aria-label="tours table">
             <TableHead>
               <TableRow sx={{ backgroundColor: 'background.default' }}>
-                <TableCell sx={{ fontWeight: 'bold' }}>{t('col_tour_name')}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>{t('col_start_time')}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>{t('col_status')}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="right">{t('col_capacity')}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('col_action')}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>{t('tour.fields.name')}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>{t('tour.fields.startTime')}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }}>{t('tour.fields.status')}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }} align="right">{t('tour.fields.capacity')}</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('common.table.action')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -77,26 +94,26 @@ export const AdminToursPage = () => {
               ) : tours.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    {t('admin_tours_none')}
+                    {t('tour.admin.empty')}
                   </TableCell>
                 </TableRow>
               ) : (
                 tours.map((tour) => (
                   <TableRow key={tour._id} hover>
-                    <TableCell 
-                      component="th" 
-                      scope="row" 
+                    <TableCell
+                      component="th"
+                      scope="row"
                       onClick={() => navigate(`/admin/tours/${tour._id}`)}
-                      sx={{ 
-                        fontWeight: 600, 
-                        color: 'primary.main', 
+                      sx={{
+                        fontWeight: 600,
+                        color: 'primary.main',
                         cursor: 'pointer',
-                        '&:hover': { textDecoration: 'underline' } 
+                        '&:hover': { textDecoration: 'underline' },
                       }}
                     >
                       {tour.name}
                     </TableCell>
-                    <TableCell>{new Date(tour.start_time).toLocaleDateString('vi-VN')}</TableCell>
+                    <TableCell>{formatDate(tour.start_time)}</TableCell>
                     <TableCell>
                       <Chip
                         label={tour.status}
@@ -106,15 +123,17 @@ export const AdminToursPage = () => {
                     </TableCell>
                     <TableCell align="right">{tour.max_capacity}</TableCell>
                     <TableCell align="center">
-                      <Button 
-                        size="small" 
-                        variant="outlined" 
+                      <Button
+                        size="small"
+                        variant="outlined"
                         onClick={() => navigate(`/admin/tours/${tour._id}`)}
-                        sx={{ mr: 1 }}
+                        sx={{ mr: 1, minHeight: 36 }}
                       >
-                        {t('btn_edit')}
+                        {t('common.actions.edit')}
                       </Button>
-                      <Button size="small" color="error" onClick={() => handleDeleteTour(tour._id)}>{t('btn_delete')}</Button>
+                      <Button size="small" color="error" onClick={() => handleDeleteTour(tour._id)} sx={{ minHeight: 36 }}>
+                        {t('common.actions.delete')}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
@@ -124,7 +143,6 @@ export const AdminToursPage = () => {
         </TableContainer>
       </Box>
 
-      {/* Mobile Card View */}
       <Box sx={{ display: { xs: 'block', md: 'none' } }}>
         {loading ? (
           <Box display="flex" justifyContent="center" py={3}>
@@ -132,15 +150,15 @@ export const AdminToursPage = () => {
           </Box>
         ) : tours.length === 0 ? (
           <Paper sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
-            <Typography color="text.secondary">{t('admin_tours_none')}</Typography>
+            <Typography color="text.secondary">{t('tour.admin.empty')}</Typography>
           </Paper>
         ) : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {tours.map((tour) => (
               <Paper key={tour._id} elevation={2} sx={{ p: 2, borderRadius: 2 }}>
                 <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                  <Typography 
-                    variant="subtitle1" 
+                  <Typography
+                    variant="subtitle1"
                     sx={{ fontWeight: 'bold', color: 'primary.main', cursor: 'pointer' }}
                     onClick={() => navigate(`/admin/tours/${tour._id}`)}
                   >
@@ -153,21 +171,28 @@ export const AdminToursPage = () => {
                   />
                 </Box>
                 <Typography variant="body2" color="text.secondary" mb={0.5}>
-                  <strong>{t('col_start_time')}:</strong> {new Date(tour.start_time).toLocaleDateString('vi-VN')}
+                  <strong>{t('tour.fields.startTime')}:</strong> {formatDate(tour.start_time)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={2}>
-                  <strong>{t('col_capacity')}:</strong> {tour.max_capacity} người
+                  <strong>{t('tour.fields.capacity')}:</strong> {tour.max_capacity} {t('tour.units.people')}
                 </Typography>
                 <Box display="flex" justifyContent="flex-end" gap={1}>
-                  <Button 
-                    size="small" 
-                    variant="outlined" 
+                  <Button
+                    size="small"
+                    variant="outlined"
                     onClick={() => navigate(`/admin/tours/${tour._id}`)}
+                    sx={{ minHeight: 36 }}
                   >
-                    {t('btn_edit')}
+                    {t('common.actions.edit')}
                   </Button>
-                  <Button size="small" variant="outlined" color="error" onClick={() => handleDeleteTour(tour._id)}>
-                    {t('btn_delete')}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={() => handleDeleteTour(tour._id)}
+                    sx={{ minHeight: 36 }}
+                  >
+                    {t('common.actions.delete')}
                   </Button>
                 </Box>
               </Paper>

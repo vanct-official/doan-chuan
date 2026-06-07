@@ -1,0 +1,101 @@
+{
+  "tour": {
+    "admin": {
+      "title": "ツアー管理",
+      "add": "新規ツアー追加",
+      "empty": "システムにツアーがありません。"
+    },
+    "create": {
+      "title": "新規ツアー作成",
+      "button": "ツアーを作成",
+      "success": "新規ツアーが作成されました。"
+    },
+    "detail": {
+      "title": "ツアー詳細",
+      "info": "ツアー情報",
+      "passengers": "乗客名簿",
+      "vehicles": "車両一覧"
+    },
+    "fields": {
+      "name": "ツアー名",
+      "description": "ツアー説明",
+      "startTime": "開始日時",
+      "endTime": "終了日時",
+      "capacity": "定員",
+      "status": "ステータス"
+    },
+    "actions": {
+      "editTour": "ツアー編集",
+      "addPassenger": "乗客を追加",
+      "addVehicle": "車両を追加",
+      "assignSeat": "座席の割り当て"
+    },
+    "messages": {
+      "loadError": "ツアー情報を読み込めませんでした。",
+      "deleteError": "ツアーを削除できませんでした。",
+      "confirmDelete": "このツアーを削除してもよろしいですか？乗客や車両などの関連データもすべて削除されます。",
+      "emptyPassengers": "参加している乗客はいません。",
+      "emptyVehicles": "このツアーに登録されている車両はありません。",
+      "updateSuccess": "情報が更新されました。",
+      "addSuccess": "追加しました。",
+      "assignSuccess": "座席의割り当てが完了しました。"
+    },
+    "units": {
+      "seats": "席",
+      "people": "人"
+    },
+    "vehicles": {
+      "licensePlate": "ナンバープレート",
+      "plateColor": "プレートの色",
+      "seatCount": "座席数",
+      "driverName": "運転手名",
+      "driverPhone": "運転手電話番号",
+      "seatAssigned": "割り当て済み",
+      "seatUnassigned": "未割り当て"
+    }
+  },
+  "admin_tours_title": "ツアー管理",
+  "admin_tours_add": "新規ツアー追加",
+  "admin_tours_none": "システムにツアーがありません。",
+  "admin_tours_add_modal_title": "新規ツアー作成",
+  "admin_tours_add_modal_btn": "ツアーを作成",
+  "tour_name": "ツアー名",
+  "tour_start_time": "開始日",
+  "tour_end_time": "終了日",
+  "tour_capacity": "定員",
+  "tour_create_success": "新規ツアーが作成されました。",
+  "tour_description": "ツアー説明",
+  "tour_detail_title": "ツアー詳細",
+  "tour_info": "ツアー情報",
+  "passengers_list": "乗客名簿",
+  "vehicles_list": "車両一覧",
+  "btn_edit_tour": "ツアー編集",
+  "btn_add_passenger": "乗客を追加",
+  "btn_add_vehicle": "車両を追加",
+  "btn_assign_seat": "座席の割り当て",
+  "modal_edit_tour_title": "ツアー情報更新",
+  "modal_add_passenger_title": "新規乗客追加",
+  "modal_add_vehicle_title": "新規車両追加",
+  "modal_assign_seat_title": "乗客を車両に割り当て",
+  "select_passenger": "乗客を選択（未割り当て）",
+  "select_vehicle": "車両を選択",
+  "status_draft": "下書き",
+  "status_published": "公開済み",
+  "capacity_seats": "席",
+  "license_plate": "ナンバープレート",
+  "plate_color": "プレートの色",
+  "seat_count": "座席数",
+  "driver_name": "運転手名",
+  "driver_phone": "運転手電話番号",
+  "no_passengers": "参加している乗客はいません。",
+  "no_vehicles": "このツアーに登録されている車両はありません。",
+  "seat_assigned": "割り当て済み",
+  "seat_unassigned": "未割り当て",
+  "msg_update_success": "情報が更新されました。",
+  "msg_add_success": "追加しました。",
+  "msg_assign_success": "座席の割り当てが完了しました。",
+  "col_tour_name": "ツアー名",
+  "col_start_time": "開始日時",
+  "col_capacity": "定員",
+  "confirm_delete_tour": "このツアーを削除してもよろしいですか？乗客や車両などの関連データもすべて削除されます。"
+}

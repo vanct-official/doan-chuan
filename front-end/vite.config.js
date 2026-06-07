@@ -1,7 +1,11 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import legacy from '@vitejs/plugin-legacy'
 import { VitePWA } from 'vite-plugin-pwa'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 /**
  * Escape ký tự đặc biệt trong RegExp.
@@ -28,6 +32,16 @@ export default defineConfig(({ mode }) => {
   )
 
   return {
+    resolve: {
+      alias: {
+        react: path.resolve(__dirname, 'node_modules/react'),
+        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
+      },
+      dedupe: ['react', 'react-dom'],
+    },
+    optimizeDeps: {
+      include: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'],
+    },
     plugins: [
       react(),
       legacy({
@@ -82,7 +96,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           // Precache toàn bộ JS/CSS/HTML sau build
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,woff}'],
+          globPatterns: ['**/*.{js,css,html,json,ico,png,svg,woff2,woff}'],
           // SPA fallback — không reload trắng khi offline
           navigateFallback: '/index.html',
           navigateFallbackDenylist: [/^\/api\//],
@@ -140,8 +154,8 @@ export default defineConfig(({ mode }) => {
           ],
         },
         devOptions: {
-          // Bật SW trong dev để test offline (có thể tắt nếu gây phiền)
-          enabled: true,
+          // Tắt SW trong dev — tránh cache lỗi gây màn trắng khi dev
+          enabled: false,
           type: 'module',
         },
       }),

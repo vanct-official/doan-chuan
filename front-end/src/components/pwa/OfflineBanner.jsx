@@ -1,19 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Alert, AlertTitle, Slide, Box } from '@mui/material';
 import CloudOffIcon from '@mui/icons-material/CloudOff';
 import SyncIcon from '@mui/icons-material/Sync';
-import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { getPendingCount } from '../../utils/offlineSync';
 
 /**
  * Banner cố định phía trên khi offline.
- * Hiển thị số mutation đang chờ sync.
  */
 export function OfflineBanner() {
-  const isOnline = useOnlineStatus();
-  const [pendingCount, setPendingCount] = React.useState(getPendingCount);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+  const [pendingCount, setPendingCount] = useState(getPendingCount);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    const goOnline = () => setIsOnline(true);
+    const goOffline = () => setIsOnline(false);
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, []);
+
+  useEffect(() => {
     const update = () => setPendingCount(getPendingCount());
     window.addEventListener('pwa-sync-complete', update);
     window.addEventListener('online', update);

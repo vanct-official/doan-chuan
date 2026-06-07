@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Button, Dialog, DialogTitle, DialogContent, DialogActions,
   Typography, Box, IconButton, Tooltip,
@@ -7,18 +7,58 @@ import InstallMobileIcon from '@mui/icons-material/InstallMobile';
 import IosShareIcon from '@mui/icons-material/IosShare';
 import AddBoxOutlinedIcon from '@mui/icons-material/AddBoxOutlined';
 import CloseIcon from '@mui/icons-material/Close';
-import { useInstallPrompt } from '../../hooks/useInstallPrompt';
 
 /**
  * Nút "Cài đặt ứng dụng" — Android/Chrome dùng beforeinstallprompt,
  * iOS hiển thị hướng dẫn Add to Home Screen thủ công.
  */
 export function InstallPwaButton({ variant = 'outlined', size = 'small' }) {
-  const { canInstall, showIOSGuide, isInstalled, promptInstall } = useInstallPrompt();
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [iosDialogOpen, setIosDialogOpen] = useState(false);
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem('pwa_install_dismissed') === '1'
   );
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    setIsInstalled(standalone);
+    setIsIOS(/iphone|ipad|ipod/i.test(navigator.userAgent));
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    const onInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+    window.addEventListener('appinstalled', onInstalled);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', onInstalled);
+    };
+  }, []);
+
+  const promptInstall = useCallback(async () => {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    if (outcome === 'accepted') {
+      setIsInstalled(true);
+      return true;
+    }
+    return false;
+  }, [deferredPrompt]);
+
+  const canInstall = !!deferredPrompt && !isInstalled;
+  const showIOSGuide = isIOS && !isInstalled;
 
   if (isInstalled || dismissed) return null;
   if (!canInstall && !showIOSGuide) return null;
@@ -56,7 +96,6 @@ export function InstallPwaButton({ variant = 'outlined', size = 'small' }) {
         </Tooltip>
       </Box>
 
-      {/* Hướng dẫn iOS — Safari không có beforeinstallprompt */}
       <Dialog open={iosDialogOpen} onClose={() => setIosDialogOpen(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Cài đặt trên iPhone/iPad</DialogTitle>
         <DialogContent>

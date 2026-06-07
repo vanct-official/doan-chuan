@@ -1,0 +1,101 @@
+{
+  "tour": {
+    "admin": {
+      "title": "Quản lý tour",
+      "add": "Thêm tour mới",
+      "empty": "Không có tour nào trong hệ thống."
+    },
+    "create": {
+      "title": "Tạo tour mới",
+      "button": "Tạo tour",
+      "success": "Tạo tour mới thành công."
+    },
+    "detail": {
+      "title": "Chi tiết tour",
+      "info": "Thông tin tour",
+      "passengers": "Danh sách hành khách",
+      "vehicles": "Danh sách phương tiện"
+    },
+    "fields": {
+      "name": "Tên tour",
+      "description": "Mô tả tour",
+      "startTime": "Thời gian bắt đầu",
+      "endTime": "Thời gian kết thúc",
+      "capacity": "Sức chứa",
+      "status": "Trạng thái"
+    },
+    "actions": {
+      "editTour": "Chỉnh sửa tour",
+      "addPassenger": "Thêm hành khách",
+      "addVehicle": "Thêm phương tiện",
+      "assignSeat": "Xếp ghế xe"
+    },
+    "messages": {
+      "loadError": "Không thể tải dữ liệu tour.",
+      "deleteError": "Không thể xóa tour.",
+      "confirmDelete": "Bạn có chắc chắn muốn xóa tour này? Tất cả dữ liệu liên quan như hành khách và xe sẽ bị xóa.",
+      "emptyPassengers": "Chưa có hành khách nào tham gia.",
+      "emptyVehicles": "Chưa có phương tiện nào chạy cho tour này.",
+      "updateSuccess": "Cập nhật thông tin thành công.",
+      "addSuccess": "Thêm thành công.",
+      "assignSuccess": "Xếp ghế xe thành công."
+    },
+    "units": {
+      "seats": "ghế",
+      "people": "người"
+    },
+    "vehicles": {
+      "licensePlate": "Biển kiểm soát",
+      "plateColor": "Màu biển số",
+      "seatCount": "Số lượng ghế",
+      "driverName": "Tên tài xế",
+      "driverPhone": "Số điện thoại tài xế",
+      "seatAssigned": "Đã xếp xe",
+      "seatUnassigned": "Chưa xếp xe"
+    }
+  },
+  "admin_tours_title": "Quản lý tour",
+  "admin_tours_add": "Thêm tour mới",
+  "admin_tours_none": "Không có tour nào trong hệ thống.",
+  "admin_tours_add_modal_title": "Tạo tour mới",
+  "admin_tours_add_modal_btn": "Tạo tour",
+  "tour_name": "Tên tour",
+  "tour_start_time": "Ngày bắt đầu",
+  "tour_end_time": "Ngày kết thúc",
+  "tour_capacity": "Sức chứa",
+  "tour_create_success": "Tạo tour mới thành công.",
+  "tour_description": "Mô tả tour",
+  "tour_detail_title": "Chi tiết tour",
+  "tour_info": "Thông tin tour",
+  "passengers_list": "Danh sách hành khách",
+  "vehicles_list": "Danh sách phương tiện",
+  "btn_edit_tour": "Chỉnh sửa tour",
+  "btn_add_passenger": "Thêm hành khách",
+  "btn_add_vehicle": "Thêm phương tiện",
+  "btn_assign_seat": "Xếp ghế xe",
+  "modal_edit_tour_title": "Cập nhật thông tin tour",
+  "modal_add_passenger_title": "Thêm hành khách mới",
+  "modal_add_vehicle_title": "Thêm phương tiện mới",
+  "modal_assign_seat_title": "Xếp ghế hành khách vào xe",
+  "select_passenger": "Chọn hành khách chưa có xe",
+  "select_vehicle": "Chọn phương tiện",
+  "status_draft": "Nháp",
+  "status_published": "Đã xuất bản",
+  "capacity_seats": "ghế",
+  "license_plate": "Biển kiểm soát",
+  "plate_color": "Màu biển số",
+  "seat_count": "Số lượng ghế",
+  "driver_name": "Tên tài xế",
+  "driver_phone": "Số điện thoại tài xế",
+  "no_passengers": "Chưa có hành khách nào tham gia.",
+  "no_vehicles": "Chưa có phương tiện nào chạy cho tour này.",
+  "seat_assigned": "Đã xếp xe",
+  "seat_unassigned": "Chưa xếp xe",
+  "msg_update_success": "Cập nhật thông tin thành công.",
+  "msg_add_success": "Thêm thành công.",
+  "msg_assign_success": "Xếp ghế xe thành công.",
+  "col_tour_name": "Tên tour",
+  "col_start_time": "Thời gian bắt đầu",
+  "col_capacity": "Sức chứa",
+  "confirm_delete_tour": "Bạn có chắc chắn muốn xóa tour này? Tất cả dữ liệu liên quan như hành khách và xe sẽ bị xóa."
+}

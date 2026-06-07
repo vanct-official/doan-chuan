@@ -1,17 +1,20 @@
 import React from 'react';
-import { 
-  Box, Typography, Card, CardContent, Grid, LinearProgress, 
-  Stack, Avatar, IconButton, Tooltip, Chip
+import {
+  Box, Typography, Card, CardContent, Grid, LinearProgress,
+  Stack, Avatar, IconButton, Tooltip, Chip, useTheme,
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import GroupsIcon from '@mui/icons-material/Groups';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import PhoneIcon from '@mui/icons-material/Phone';
 import EventIcon from '@mui/icons-material/Event';
 import EditIcon from '@mui/icons-material/Edit';
 import LinkIcon from '@mui/icons-material/Link';
+import { heroGradient } from '../tourDetailTheme';
 
 export default function OverviewTab({ tour, memberships, vehicles, canEditItinerary, onEditTour, onInviteLink }) {
-  // Calculate stats
+  const theme = useTheme();
+
   const totalCapacity = vehicles.reduce((sum, v) => sum + (v.seat_count || 0), 0);
   const totalAssigned = memberships.filter(m => m.vehicle_id).length;
   const totalMembers = memberships.filter(m => m.status !== 'left').length;
@@ -20,22 +23,30 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
   const occupancyRate = totalCapacity > 0 ? (totalAssigned / totalCapacity) * 100 : 0;
   const unassigned = totalMembers - totalAssigned;
 
+  const statCardSx = {
+    borderRadius: 4,
+    border: '1px solid',
+    borderColor: 'divider',
+    bgcolor: 'background.paper',
+  };
+
   return (
     <Box sx={{ p: 2, pb: 10 }}>
-      {/* Leader & Tour info card */}
-      <Card 
-        sx={{ 
-          mb: 3, 
-          borderRadius: 4, 
-          background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: 4,
+          background: heroGradient(theme),
           color: 'white',
-          boxShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.5)'
+          boxShadow: theme.palette.mode === 'dark'
+            ? '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
+            : '0 10px 25px -5px rgba(59, 130, 246, 0.5)',
         }}
       >
         <CardContent sx={{ p: 3 }}>
           <Stack direction="row" spacing={2} alignItems="center" mb={2}>
-            <Avatar 
-              src={tour.leader_id?.avatar} 
+            <Avatar
+              src={tour.leader_id?.avatar}
               sx={{ width: 60, height: 60, border: '3px solid rgba(255,255,255,0.3)' }}
             >
               {tour.leader_id?.name ? tour.leader_id.name[0] : 'L'}
@@ -54,7 +65,6 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
                 </Typography>
               )}
             </Box>
-            {/* Action Buttons */}
             <Stack direction="column" spacing={0.5}>
               {canEditItinerary && onEditTour && (
                 <Tooltip title="Chỉnh sửa tour">
@@ -89,7 +99,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
               Bắt đầu: {new Date(tour.start_time).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}
             </Typography>
-            <br/>
+            <br />
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
               Kết thúc: {new Date(tour.end_time).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}
             </Typography>
@@ -103,16 +113,10 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
 
       <Grid container spacing={2}>
         <Grid item xs={6}>
-          <Card elevation={0} sx={{ 
-            borderRadius: 4, 
-            border: '1px solid', 
-            borderColor: 'divider', 
-            bgcolor: '#ffffff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-          }}>
+          <Card elevation={0} sx={statCardSx}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'primary.main' }}>
-                <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: 'primary.light', color: 'primary.dark', mr: 1 }}>
+                <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.15), color: 'primary.main', mr: 1 }}>
                   <GroupsIcon sx={{ fontSize: 20 }} />
                 </Box>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>Hành khách</Typography>
@@ -131,18 +135,12 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
             </CardContent>
           </Card>
         </Grid>
-        
+
         <Grid item xs={6}>
-          <Card elevation={0} sx={{ 
-            borderRadius: 4, 
-            border: '1px solid', 
-            borderColor: 'divider', 
-            bgcolor: '#ffffff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-          }}>
+          <Card elevation={0} sx={statCardSx}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: '#f59e0b' }}>
-                <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: '#fef3c7', color: '#d97706', mr: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'warning.main' }}>
+                <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: alpha(theme.palette.warning.main, 0.15), color: 'warning.main', mr: 1 }}>
                   <DirectionsCarIcon sx={{ fontSize: 20 }} />
                 </Box>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>Phương tiện</Typography>
@@ -158,35 +156,45 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
         </Grid>
 
         <Grid item xs={12}>
-          <Card elevation={0} sx={{ 
-            borderRadius: 4, 
-            border: '1px solid', 
-            borderColor: 'divider',
-            bgcolor: '#ffffff',
-            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
-          }}>
+          <Card elevation={0} sx={statCardSx}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'center' }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Tình trạng xếp xe</Typography>
-                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main', bgcolor: 'primary.light', px: 1, py: 0.5, borderRadius: 2 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{
+                    fontWeight: 800,
+                    color: 'primary.main',
+                    bgcolor: alpha(theme.palette.primary.main, 0.12),
+                    px: 1,
+                    py: 0.5,
+                    borderRadius: 2,
+                  }}
+                >
                   {totalAssigned} / {totalCapacity} chỗ
                 </Typography>
               </Box>
-              <LinearProgress 
-                variant="determinate" 
-                value={occupancyRate > 100 ? 100 : occupancyRate} 
-                sx={{ 
-                  height: 10, 
-                  borderRadius: 5, 
-                  bgcolor: '#e2e8f0', 
-                  '& .MuiLinearProgress-bar': { borderRadius: 5, bgcolor: occupancyRate >= 100 ? '#10b981' : 'primary.main' } 
-                }} 
+              <LinearProgress
+                variant="determinate"
+                value={occupancyRate > 100 ? 100 : occupancyRate}
+                sx={{
+                  height: 10,
+                  borderRadius: 5,
+                  bgcolor: alpha(theme.palette.action.hover, 0.8),
+                  '& .MuiLinearProgress-bar': {
+                    borderRadius: 5,
+                    bgcolor: occupancyRate >= 100 ? 'success.main' : 'primary.main',
+                  },
+                }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
                   Đã xếp {Math.round(occupancyRate)}%
                 </Typography>
-                <Typography variant="caption" sx={{ color: unassigned > 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: unassigned > 0 ? 'error.main' : 'success.main', fontWeight: 600 }}
+                >
                   {unassigned > 0 ? `${unassigned} người chưa xếp` : '✓ Đã xếp xong!'}
                 </Typography>
               </Box>

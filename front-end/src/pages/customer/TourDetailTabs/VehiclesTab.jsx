@@ -58,7 +58,7 @@ export default function VehiclesTab({
                 <SearchIcon color="action" />
               </InputAdornment>
             ),
-            sx: { borderRadius: 3, bgcolor: 'white' }
+            sx: { borderRadius: 3, bgcolor: 'background.paper' }
           }}
           sx={{ mb: 1.5 }}
         />
@@ -106,7 +106,7 @@ export default function VehiclesTab({
                   borderRadius: 3, 
                   border: '1px solid', 
                   borderColor: isFull ? 'success.light' : 'divider',
-                  bgcolor: 'white',
+                  bgcolor: 'background.paper',
                   overflow: 'hidden'
                 }}>
                   <CardActionArea onClick={() => onVehicleClick(vehicle)}>

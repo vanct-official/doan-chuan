@@ -1,58 +1,39 @@
 import React, { useState } from 'react';
-import { 
-  AppBar, Toolbar, Typography, Button, IconButton, Menu, MenuItem, Box,
-  Drawer, List, ListItem, ListItemText, ListItemButton, Divider,
-  Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
+import {
+  AppBar,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  Divider,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
+  Menu,
+  MenuItem,
+  Toolbar,
+  Typography,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import TranslateIcon from '@mui/icons-material/Translate';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
-import { useTranslation } from 'react-i18next';
 import { useColorMode } from '../theme/ThemeContext';
 import { InstallPwaButton } from './pwa/InstallPwaButton';
+import { LanguageSwitcher } from './i18n/LanguageSwitcher';
+import { useTranslate } from '../hooks/useTranslate';
 
 export const Header = ({ onMenuClick }) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslate(['common', 'auth']);
   const { mode, toggleColorMode } = useColorMode();
-  const [anchorEl, setAnchorEl] = useState(null); // For language menu
-  const [userAnchorEl, setUserAnchorEl] = useState(null); // For user menu
-  const [mobileOpen, setMobileOpen] = useState(false); // For mobile drawer
-
-  const handleLanguageMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
-    localStorage.setItem('app_lang', lng);
-    setAnchorEl(null);
-  };
-
-  const handleUserMenu = (event) => {
-    setUserAnchorEl(event.currentTarget);
-  };
-
-  const handleUserMenuClose = () => {
-    setUserAnchorEl(null);
-  };
-
+  const [userAnchorEl, setUserAnchorEl] = useState(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-
-  const handleLogout = () => {
-    setLogoutDialogOpen(true);
-  };
-
-  const handleConfirmLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login';
-  };
-
-  const handleCloseLogoutDialog = () => {
-    setLogoutDialogOpen(false);
-  };
-
   const [user, setUser] = useState(() => {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
@@ -73,16 +54,24 @@ export const Header = ({ onMenuClick }) => {
     };
   }, []);
 
-  const currentPath = window.location.pathname;
-  // Use simple a href mapping for simplicity
   const handleNavigate = (path) => {
     window.location.href = path;
+  };
+
+  const handleConfirmLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/login';
+  };
+
+  const handleUserMenuClose = () => {
+    setUserAnchorEl(null);
   };
 
   const drawer = (
     <Box onClick={() => setMobileOpen(false)} sx={{ textAlign: 'center', width: 250 }}>
       <Typography variant="h6" sx={{ my: 2, fontWeight: 'bold' }}>
-        {t('app_title')}
+        {t('common.app.title')}
       </Typography>
       <Divider />
       <Box sx={{ px: 2, py: 1.5 }}>
@@ -92,33 +81,36 @@ export const Header = ({ onMenuClick }) => {
       <List>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate('/')}>
-            <ListItemText primary={t('menu_home')} />
+            <ListItemText primary={t('common.navigation.home')} />
           </ListItemButton>
         </ListItem>
         <ListItem disablePadding>
           <ListItemButton onClick={() => handleNavigate('/tours')}>
-            <ListItemText primary={t('menu_tours')} />
+            <ListItemText primary={t('common.navigation.tours')} />
           </ListItemButton>
         </ListItem>
-        
+
         {user ? (
           <>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigate('/profile')}>
-                <ListItemText primary={t('profile')} secondary={`User: ${user.name}`} />
+                <ListItemText
+                  primary={t('profile')}
+                  secondary={t('common.messages.hello', { name: user.name })}
+                />
               </ListItemButton>
             </ListItem>
             {user.role === 'admin' && (
               <ListItem disablePadding>
                 <ListItemButton onClick={() => handleNavigate('/admin')}>
-                  <ListItemText primary="Trang quản trị" />
+                  <ListItemText primary={t('common.navigation.admin')} />
                 </ListItemButton>
               </ListItem>
             )}
             <Divider sx={{ my: 1 }} />
             <ListItem disablePadding>
-              <ListItemButton onClick={handleLogout} sx={{ color: 'error.main' }}>
-                <ListItemText primary={t('logout')} />
+              <ListItemButton onClick={() => setLogoutDialogOpen(true)} sx={{ color: 'error.main' }}>
+                <ListItemText primary={t('common.actions.logout')} />
               </ListItemButton>
             </ListItem>
           </>
@@ -126,12 +118,12 @@ export const Header = ({ onMenuClick }) => {
           <>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigate('/login')}>
-                <ListItemText primary="Đăng nhập" />
+                <ListItemText primary={t('auth.login.title')} />
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton onClick={() => handleNavigate('/register')}>
-                <ListItemText primary="Đăng ký" />
+                <ListItemText primary={t('auth.register.title')} />
               </ListItemButton>
             </ListItem>
           </>
@@ -152,26 +144,32 @@ export const Header = ({ onMenuClick }) => {
         >
           <MenuIcon />
         </IconButton>
-        <Typography variant="h6" component="div" sx={{ flexGrow: 1, cursor: 'pointer' }} onClick={() => handleNavigate('/')}>
-          {t('app_title')}
+
+        <Typography
+          variant="h6"
+          component="div"
+          sx={{ flexGrow: 1, cursor: 'pointer' }}
+          onClick={() => handleNavigate('/')}
+        >
+          {t('common.app.title')}
         </Typography>
 
         <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
           <InstallPwaButton variant="outlined" size="small" />
-          <Button color="inherit" onClick={() => handleNavigate('/')}>{t('menu_home')}</Button>
-          <Button color="inherit" onClick={() => handleNavigate('/tours')}>{t('menu_tours')}</Button>
-          {user && user.role === 'admin' && (
-            <Button color="inherit" onClick={() => handleNavigate('/admin')}>{t('menu_dashboard')}</Button>
+          <Button color="inherit" onClick={() => handleNavigate('/')}>{t('common.navigation.home')}</Button>
+          <Button color="inherit" onClick={() => handleNavigate('/tours')}>{t('common.navigation.tours')}</Button>
+          {user?.role === 'admin' && (
+            <Button color="inherit" onClick={() => handleNavigate('/admin')}>{t('common.navigation.dashboard')}</Button>
           )}
-          
+
           {user ? (
             <>
-              <Button 
-                color="inherit" 
-                onClick={handleUserMenu}
+              <Button
+                color="inherit"
+                onClick={(event) => setUserAnchorEl(event.currentTarget)}
                 sx={{ ml: 1, textTransform: 'none', fontWeight: 'bold' }}
               >
-                {t('hello')}, {user.name}
+                {t('common.messages.hello', { name: user.name })}
               </Button>
               <Menu
                 anchorEl={userAnchorEl}
@@ -183,32 +181,35 @@ export const Header = ({ onMenuClick }) => {
                 </MenuItem>
                 {user.role === 'admin' && (
                   <MenuItem onClick={() => { handleUserMenuClose(); handleNavigate('/admin'); }}>
-                    Trang quản trị
+                    {t('common.navigation.admin')}
                   </MenuItem>
                 )}
-                <MenuItem onClick={() => { handleUserMenuClose(); handleLogout(); }} sx={{ color: 'error.main' }}>
-                  {t('logout')}
+                <MenuItem
+                  onClick={() => { handleUserMenuClose(); setLogoutDialogOpen(true); }}
+                  sx={{ color: 'error.main' }}
+                >
+                  {t('common.actions.logout')}
                 </MenuItem>
               </Menu>
             </>
           ) : (
             <>
-              <Button color="inherit" onClick={() => handleNavigate('/login')}>Đăng nhập</Button>
-              <Button variant="outlined" color="inherit" onClick={() => handleNavigate('/register')} sx={{ ml: 1 }}>Đăng ký</Button>
+              <Button color="inherit" onClick={() => handleNavigate('/login')}>{t('auth.login.title')}</Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                onClick={() => handleNavigate('/register')}
+                sx={{ ml: 1 }}
+              >
+                {t('auth.register.title')}
+              </Button>
             </>
           )}
         </Box>
 
-        <IconButton color="inherit" onClick={handleLanguageMenu}>
-          <TranslateIcon />
-        </IconButton>
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-          <MenuItem onClick={() => changeLanguage('vi')}>Tiếng Việt</MenuItem>
-          <MenuItem onClick={() => changeLanguage('en')}>English</MenuItem>
-          <MenuItem onClick={() => changeLanguage('ja')}>日本語</MenuItem>
-        </Menu>
+        <LanguageSwitcher />
 
-        <IconButton color="inherit" onClick={toggleColorMode}>
+        <IconButton color="inherit" onClick={toggleColorMode} aria-label={t('toggle_dark_mode')}>
           {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
         </IconButton>
       </Toolbar>
@@ -217,9 +218,7 @@ export const Header = ({ onMenuClick }) => {
         variant="temporary"
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        ModalProps={{
-          keepMounted: true, // Better open performance on mobile.
-        }}
+        ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', sm: 'none' },
           '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
@@ -228,27 +227,26 @@ export const Header = ({ onMenuClick }) => {
         {drawer}
       </Drawer>
 
-      {/* Dialog xác nhận đăng xuất */}
       <Dialog
         open={logoutDialogOpen}
-        onClose={handleCloseLogoutDialog}
+        onClose={() => setLogoutDialogOpen(false)}
         aria-labelledby="logout-dialog-title"
         aria-describedby="logout-dialog-description"
       >
         <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 'bold' }}>
-          {t('logout_confirm_title')}
+          {t('common.logout.title')}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="logout-dialog-description">
-            {t('logout_confirm_desc')}
+            {t('common.logout.description')}
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseLogoutDialog} color="inherit" variant="outlined">
-            {t('cancel')}
+          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit" variant="outlined">
+            {t('common.actions.cancel')}
           </Button>
           <Button onClick={handleConfirmLogout} color="error" variant="contained" autoFocus>
-            {t('logout')}
+            {t('common.actions.logout')}
           </Button>
         </DialogActions>
       </Dialog>

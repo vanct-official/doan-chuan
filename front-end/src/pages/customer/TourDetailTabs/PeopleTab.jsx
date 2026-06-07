@@ -2,8 +2,9 @@ import React, { useState, useMemo } from 'react';
 import {
   Box, Typography, TextField, InputAdornment, Avatar,
   Chip, Skeleton, IconButton, Stack, Divider, Collapse,
-  Card, CardContent, Tooltip
+  Card, CardContent, Tooltip, useTheme, alpha,
 } from '@mui/material';
+import { customerTypeChip, groupPalette, memberCardSx } from '../tourDetailTheme';
 import SearchIcon from '@mui/icons-material/Search';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import GroupsIcon from '@mui/icons-material/Groups';
@@ -52,12 +53,6 @@ function getMemberGender(member) {
   return member.guest_info?.gender || null;
 }
 
-const CUSTOMER_TYPE_LABELS = {
-  adult: { label: 'Người lớn', color: '#3b82f6', bg: '#eff6ff' },
-  child: { label: 'Trẻ em', color: '#f59e0b', bg: '#fffbeb' },
-  elderly: { label: 'Người cao tuổi', color: '#8b5cf6', bg: '#f5f3ff' },
-};
-
 const ROLE_LABELS = {
   leader: { label: '👑 Trưởng đoàn', color: 'error' },
   group_rep: { label: '🏷️ Trưởng nhóm', color: 'primary' },
@@ -77,6 +72,7 @@ const STATUS_CONFIG = {
 // ─── Member Card ──────────────────────────────────────────────────────────────
 
 function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit, onDelete, onAssignVehicle, onLeave }) {
+  const theme = useTheme();
   const name = getMemberName(member);
   const phone = getMemberPhone(member);
   const age = getMemberAge(member);
@@ -86,7 +82,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
   const isOwn = (member.user_id?._id || member.user_id) === currentUserId;
 
   const roleInfo = ROLE_LABELS[member.role];
-  const ctInfo = CUSTOMER_TYPE_LABELS[member.customer_type] || CUSTOMER_TYPE_LABELS.adult;
+  const ctInfo = customerTypeChip(theme, member.customer_type);
   const statusInfo = STATUS_CONFIG[member.status] || STATUS_CONFIG.pending;
 
   // Avatar color based on name
@@ -99,11 +95,8 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
         mb: 1.5,
         borderRadius: 3,
         border: '1px solid',
-        borderColor: isLeft ? '#e5e7eb' : member.status === 'pending' ? '#fcd34d' : '#e2e8f0',
-        bgcolor: isLeft ? '#f9fafb' : 'white',
-        opacity: isLeft ? 0.75 : 1,
         transition: 'box-shadow 0.2s',
-        '&:hover': { boxShadow: isLeft ? 'none' : '0 4px 12px rgba(0,0,0,0.08)' },
+        ...memberCardSx(theme, member),
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -116,7 +109,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
               fontSize: '1rem', fontWeight: 800,
               flexShrink: 0,
               border: '2px solid',
-              borderColor: isLeft ? '#e5e7eb' : `${avatarBg}40`,
+              borderColor: isLeft ? 'divider' : alpha(avatarBg, 0.4),
             }}
           >
             {getInitials(name)}
@@ -158,28 +151,28 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
           <Stack direction="row" spacing={0} flexShrink={0}>
             {canEditItinerary && onAssignVehicle && !isLeft && (
               <Tooltip title="Xếp xe">
-                <IconButton size="small" onClick={() => onAssignVehicle(member)} sx={{ color: '#10b981' }}>
+                <IconButton size="small" onClick={() => onAssignVehicle(member)} sx={{ color: 'success.main' }}>
                   <DirectionsCarFilledIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             )}
             {onEdit && (
               <Tooltip title="Chỉnh sửa">
-                <IconButton size="small" onClick={() => onEdit(member)} sx={{ color: '#f59e0b' }}>
+                <IconButton size="small" onClick={() => onEdit(member)} sx={{ color: 'warning.main' }}>
                   <EditIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             )}
             {isOwn && !isLeft && onLeave && (
               <Tooltip title="Rời tour">
-                <IconButton size="small" onClick={() => onLeave(member)} sx={{ color: '#6366f1' }}>
+                <IconButton size="small" onClick={() => onLeave(member)} sx={{ color: 'primary.main' }}>
                   <ExitToAppIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
             )}
             {canEditItinerary && onDelete && (
               <Tooltip title="Xóa khỏi tour">
-                <IconButton size="small" onClick={() => onDelete(member._id)} sx={{ color: '#ef4444' }}>
+                <IconButton size="small" onClick={() => onDelete(member._id)} sx={{ color: 'error.main' }}>
                   <DeleteIcon sx={{ fontSize: 18 }} />
                 </IconButton>
               </Tooltip>
@@ -195,7 +188,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
               icon={gender === 'male' ? <ManIcon style={{ fontSize: 12 }} /> : gender === 'female' ? <WomanIcon style={{ fontSize: 12 }} /> : <PersonIcon style={{ fontSize: 12 }} />}
               label={[gender === 'male' ? 'Nam' : gender === 'female' ? 'Nữ' : null, age ? `${age} tuổi` : null].filter(Boolean).join(' · ')}
               size="small"
-              sx={{ height: 22, fontSize: '0.72rem', bgcolor: '#f8fafc', color: '#475569', fontWeight: 500 }}
+              sx={{ height: 22, fontSize: '0.72rem', bgcolor: 'action.hover', color: 'text.secondary', fontWeight: 500 }}
             />
           )}
 
@@ -203,7 +196,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
           <Chip
             label={ctInfo.label}
             size="small"
-            sx={{ height: 22, fontSize: '0.72rem', bgcolor: ctInfo.bg, color: ctInfo.color, fontWeight: 600 }}
+            sx={{ height: 22, fontSize: '0.72rem', bgcolor: ctInfo.bgcolor, color: ctInfo.color, fontWeight: 600 }}
           />
 
           {/* Status */}
@@ -229,7 +222,11 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
             <Chip
               label="Chưa có xe"
               size="small"
-              sx={{ height: 22, fontSize: '0.72rem', bgcolor: '#fef9c3', color: '#92400e', fontWeight: 500 }}
+              sx={{
+                height: 22, fontSize: '0.72rem', fontWeight: 500,
+                bgcolor: alpha(theme.palette.warning.main, 0.15),
+                color: 'warning.dark',
+              }}
             />
           )}
         </Box>
@@ -241,6 +238,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
 // ─── Group Section ─────────────────────────────────────────────────────────────
 
 function GroupSection({ groupName, groupColor, members, vehicles, canEditItinerary, currentUserId, onEdit, onDelete, onAssignVehicle, onLeave }) {
+  const theme = useTheme();
   const [open, setOpen] = useState(true);
   const activeCount = members.filter(m => m.status !== 'left').length;
 
@@ -252,23 +250,23 @@ function GroupSection({ groupName, groupColor, members, vehicles, canEditItinera
         sx={{
           display: 'flex', alignItems: 'center', gap: 1,
           px: 1.5, py: 1,
-          bgcolor: groupColor || '#f1f5f9',
+          bgcolor: groupColor || alpha(theme.palette.action.hover, 0.6),
           borderRadius: 2,
           cursor: 'pointer',
           mb: 1,
           userSelect: 'none',
         }}
       >
-        <GroupsIcon sx={{ fontSize: 18, color: '#475569' }} />
-        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1e293b', flex: 1 }}>
+        <GroupsIcon sx={{ fontSize: 18, color: 'text.secondary' }} />
+        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', flex: 1 }}>
           {groupName}
         </Typography>
         <Chip
           label={`${activeCount} người`}
           size="small"
-          sx={{ height: 20, fontSize: '0.68rem', fontWeight: 600, bgcolor: 'white', color: '#475569' }}
+          sx={{ height: 20, fontSize: '0.68rem', fontWeight: 600, bgcolor: 'background.paper', color: 'text.secondary' }}
         />
-        {open ? <ExpandLessIcon sx={{ fontSize: 18, color: '#94a3b8' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: '#94a3b8' }} />}
+        {open ? <ExpandLessIcon sx={{ fontSize: 18, color: 'text.disabled' }} /> : <ExpandMoreIcon sx={{ fontSize: 18, color: 'text.disabled' }} />}
       </Box>
 
       <Collapse in={open}>
@@ -307,6 +305,7 @@ export default function PeopleTab({
   onLeavePassenger,
 }) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('active'); // 'active', 'pending', 'all', 'no_vehicle'
 
@@ -331,6 +330,7 @@ export default function PeopleTab({
 
   // Group members by group_id
   const grouped = useMemo(() => {
+    const groupColors = groupPalette(theme);
     const groupMap = new Map();
 
     // Nhóm có group_id
@@ -352,7 +352,7 @@ export default function PeopleTab({
     groups.forEach(g => {
       const members = groupMap.get(g._id.toString());
       if (members && members.length > 0) {
-        result.push({ key: g._id.toString(), name: g.name, color: '#e0f2fe', members });
+        result.push({ key: g._id.toString(), name: g.name, color: groupColors.primary, members });
       }
     });
 
@@ -360,17 +360,17 @@ export default function PeopleTab({
     groupMap.forEach((members, key) => {
       const alreadyAdded = result.some(r => r.key === key);
       if (!alreadyAdded) {
-        result.push({ key, name: `Nhóm (${key.slice(-4)})`, color: '#f0fdf4', members });
+        result.push({ key, name: `Nhóm (${key.slice(-4)})`, color: groupColors.success, members });
       }
     });
 
     // Ungrouped
     if (noGroup.length > 0) {
-      result.push({ key: '__none__', name: 'Chưa có nhóm', color: '#fafafa', members: noGroup });
+      result.push({ key: '__none__', name: 'Chưa có nhóm', color: groupColors.neutral, members: noGroup });
     }
 
     return result;
-  }, [filteredMembers, groups]);
+  }, [filteredMembers, groups, theme.palette.mode]);
 
   const totalActive = memberships.filter(m => m.status !== 'left').length;
   const totalPending = memberships.filter(m => m.status === 'pending').length;
@@ -379,7 +379,11 @@ export default function PeopleTab({
   return (
     <Box sx={{ pb: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Sticky header */}
-      <Box sx={{ p: 2, position: 'sticky', top: 0, bgcolor: '#f8fafc', zIndex: 10, boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+      <Box sx={{
+        p: 2, position: 'sticky', top: 0, zIndex: 10,
+        bgcolor: 'background.default',
+        boxShadow: theme.palette.mode === 'dark' ? 1 : '0 1px 3px rgba(0,0,0,0.06)',
+      }}>
         <TextField
           fullWidth
           size="small"
@@ -392,7 +396,7 @@ export default function PeopleTab({
                 <SearchIcon color="action" sx={{ fontSize: 20 }} />
               </InputAdornment>
             ),
-            sx: { borderRadius: 3, bgcolor: 'white' }
+            sx: { borderRadius: 3, bgcolor: 'background.paper' }
           }}
           sx={{ mb: 1.5 }}
         />
