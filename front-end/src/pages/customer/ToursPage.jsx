@@ -23,7 +23,10 @@ const gradients = [
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { tourService } from '../../services/tourService';
-import { parseDateTimeLocalToISO } from '../../utils/dateUtils';
+import { toUTC } from '../../utils/dateUtils';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
 export const ToursPage = () => {
   const { t } = useTranslation();
@@ -36,8 +39,8 @@ export const ToursPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [tourForm, setTourForm] = useState({
     name: '',
-    start_time: '',
-    end_time: '',
+    start_time: null,
+    end_time: null,
     max_capacity: ''
   });
   const [submitting, setSubmitting] = useState(false);
@@ -76,7 +79,7 @@ export const ToursPage = () => {
 
   const handleOpenModal = () => {
     setOpenModal(true);
-    setTourForm({ name: '', start_time: '', end_time: '', max_capacity: '' });
+    setTourForm({ name: '', start_time: null, end_time: null, max_capacity: '' });
     setSubmitError('');
     setSubmitSuccess('');
   };
@@ -106,9 +109,9 @@ export const ToursPage = () => {
     try {
       await tourService.createTour({
         name: tourForm.name,
-        start_time: parseDateTimeLocalToISO(tourForm.start_time),
-        end_time: parseDateTimeLocalToISO(tourForm.end_time),
-        deadline: parseDateTimeLocalToISO(tourForm.start_time), // deadline is equal to start_time
+        start_time: toUTC(tourForm.start_time),
+        end_time: toUTC(tourForm.end_time),
+        deadline: toUTC(tourForm.start_time), // deadline is equal to start_time
         max_capacity: Number(tourForm.max_capacity),
         leader_id: userId
       });
@@ -326,28 +329,26 @@ export const ToursPage = () => {
               onChange={handleFormChange}
               autoFocus
             />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="start_time"
-              label={t('tour_start_time')}
-              type="datetime-local"
-              InputLabelProps={{ shrink: true }}
-              value={tourForm.start_time}
-              onChange={handleFormChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="end_time"
-              label={t('tour_end_time')}
-              type="datetime-local"
-              InputLabelProps={{ shrink: true }}
-              value={tourForm.end_time}
-              onChange={handleFormChange}
-            />
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DateTimePicker
+                label={t('tour_start_time')}
+                value={tourForm.start_time}
+                onChange={(newValue) => setTourForm({ ...tourForm, start_time: newValue })}
+                format="DD/MM/YYYY HH:mm"
+                slotProps={{
+                  textField: { margin: 'normal', required: true, fullWidth: true }
+                }}
+              />
+              <DateTimePicker
+                label={t('tour_end_time')}
+                value={tourForm.end_time}
+                onChange={(newValue) => setTourForm({ ...tourForm, end_time: newValue })}
+                format="DD/MM/YYYY HH:mm"
+                slotProps={{
+                  textField: { margin: 'normal', required: true, fullWidth: true }
+                }}
+              />
+            </LocalizationProvider>
             <TextField
               margin="normal"
               required

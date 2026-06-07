@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import OverviewTab from './TourDetailTabs/OverviewTab';
+import PeopleTab from './TourDetailTabs/PeopleTab';
+import VehiclesTab from './TourDetailTabs/VehiclesTab';
+import ScheduleTab from './TourDetailTabs/ScheduleTab';
 import {
   Typography, Box, Card, CardContent, Grid, Chip, Button,
   CircularProgress, Alert, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Select, FormControl,
   InputLabel, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, LinearProgress, Stack, IconButton,
-  Divider, Tooltip, Tabs, Tab, Avatar, AvatarGroup, Checkbox, FormControlLabel
+  Divider, Tooltip, Tabs, Tab, Avatar, AvatarGroup, Checkbox, FormControlLabel, TableSortLabel,
+  BottomNavigation, BottomNavigationAction, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon
 } from '@mui/material';
+import DashboardIcon from '@mui/icons-material/Dashboard';
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -99,6 +107,9 @@ export default function TourDetailPage() {
   const [leavingMember, setLeavingMember] = useState(null);
   const [statusFilter, setStatusFilter] = useState('');
 
+  // Mobile Bottom Navigation State
+  const [bottomNavValue, setBottomNavValue] = useState(0); // 0: Overview, 1: People, 2: Vehicles, 3: Schedule
+
   // Form states
   const [tourForm, setTourForm] = useState({ name: '', start_time: '', end_time: '', max_capacity: '' });
 
@@ -111,6 +122,7 @@ export default function TourDetailPage() {
     gender: 'male',
     customer_type: 'adult',
     role: 'member',
+    status: 'pending',
     is_driver: false,
     group_id: 'none'
   });
@@ -510,6 +522,7 @@ export default function TourDetailPage() {
       gender: genderVal || 'male',
       customer_type: member.customer_type || 'adult',
       role: member.role || 'member',
+      status: member.status || 'pending',
       is_driver: member.is_driver || false,
       group_id: member.group_id?._id || member.group_id || 'none'
     });
@@ -533,6 +546,7 @@ export default function TourDetailPage() {
         role: newGroupSelected ? 'group_rep' : passengerForm.role,
         is_driver: passengerForm.is_driver,
         customer_type: passengerForm.customer_type,
+        status: passengerForm.status,
         group_id: passengerForm.group_id === 'none' || newGroupSelected ? null : passengerForm.group_id
       };
 
@@ -980,11 +994,11 @@ export default function TourDetailPage() {
       if (editItineraryId) {
         const res = await itineraryService.updateItinerary(editItineraryId, payload);
         setItineraries(itineraries.map(i => i._id === editItineraryId ? res.itinerary : i));
-        setActionSuccess('Đã cập nhật lịch trình!');
+        setActionSuccess('Da cap nhat lich trinh!');
       } else {
         const res = await itineraryService.createItinerary({ ...payload, tour_id: id });
         setItineraries([...itineraries, res.itinerary].sort((a, b) => new Date(a.date) - new Date(b.date)));
-        setActionSuccess('Đã thêm lịch trình mới!');
+        setActionSuccess('Da them lich trinh moi!');
       }
       setTimeout(() => {
         setItineraryModalOpen(false);
@@ -1000,7 +1014,7 @@ export default function TourDetailPage() {
   };
 
   const handleDeleteItinerary = async (itineraryId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn xóa mốc lịch trình này? Các dữ liệu điểm danh liên quan có thể bị mất.')) return;
+    if (!window.confirm('Ban co chac chan muon xoa moc lich trinh nay?')) return;
     try {
       await itineraryService.deleteItinerary(itineraryId);
       setItineraries(itineraries.filter(i => i._id !== itineraryId));
@@ -1012,79 +1026,96 @@ export default function TourDetailPage() {
   // ─── ATTENDANCE HANDLERS ─────────────────────────────────────────────
   const handleOpenAttendance = async (itinerary) => {
     setSelectedItinerary(itinerary);
-    
-    // Find the current user's vehicle
-    const myMembership = memberships.find(m => {
-      const mUserId = m.user_id?._id || m.user_id;
-      return mUserId === currentUserId && m.status !== 'left';
-    });
-    
-    if (!myMembership || !myMembership.vehicle_id) {
-      alert("Bạn chưa được xếp xe nên không thể điểm danh.");
-      return;
-    }
-    
     setAttendanceModalOpen(true);
-    
+    setAttendanceData([]);
     try {
-      const res = await attendanceService.getAttendance(itinerary._id, myMembership.vehicle_id);
-      // Map API data to state format
-      setAttendanceData(res.map(a => ({ membership_id: a.membership_id, status: a.status })));
+      const myMembership = memberships.find(m => (m.user_id?._id || m.user_id) === currentUserId && m.status !== 'left');
+      if (isCreatorOrAdmin) {
+        const vehicleIds = [...new Set(memberships.filter(m => m.vehicle_id).map(m => m.vehicle_id?._id || m.vehicle_id))];
+        const allData = [];
+        for (const vId of vehicleIds) {
+          try {
+            const res = await attendanceService.getAttendance(itinerary._id, vId);
+            allData.push(...res.map(a => ({ membership_id: a.membership_id, status: a.status })));
+          } catch (_) {}
+        }
+        setAttendanceData(allData);
+      } else if (myMembership?.vehicle_id) {
+        const vId = myMembership.vehicle_id?._id || myMembership.vehicle_id;
+        const res = await attendanceService.getAttendance(itinerary._id, vId);
+        setAttendanceData(res.map(a => ({ membership_id: a.membership_id, status: a.status })));
+      }
     } catch (err) {
-      console.error(err);
-      alert("Lỗi khi tải dữ liệu điểm danh cũ.");
+      console.error('Loi tai diem danh:', err);
     }
   };
 
   const handleToggleAttendance = (membershipId) => {
     const existing = attendanceData.find(a => a.membership_id === membershipId);
-    let newStatus = 'present';
     if (existing) {
-      newStatus = existing.status === 'present' ? 'absent' : 'present';
+      const newStatus = existing.status === 'present' ? 'absent' : 'present';
       setAttendanceData(attendanceData.map(a => a.membership_id === membershipId ? { ...a, status: newStatus } : a));
     } else {
       setAttendanceData([...attendanceData, { membership_id: membershipId, status: 'present' }]);
     }
   };
 
-  const handleSaveAttendance = async () => {
-    const myMembership = memberships.find(m => {
-      const mUserId = m.user_id?._id || m.user_id;
-      return mUserId === currentUserId && m.status !== 'left';
+  const handleToggleGroupAttendance = (groupMemberIds, markPresent) => {
+    setAttendanceData(prev => {
+      const updated = [...prev];
+      groupMemberIds.forEach(mid => {
+        const idx = updated.findIndex(a => a.membership_id === mid);
+        if (idx >= 0) {
+          updated[idx] = { ...updated[idx], status: markPresent ? 'present' : 'absent' };
+        } else {
+          updated.push({ membership_id: mid, status: markPresent ? 'present' : 'absent' });
+        }
+      });
+      return updated;
     });
-    
-    if (!myMembership || !myMembership.vehicle_id) return;
-    
-    // Fill in default 'present' for anyone not in attendanceData but on the vehicle
-    const vehicleMembers = memberships.filter(m => m.vehicle_id === myMembership.vehicle_id && m.status !== 'left');
-    const finalAttendance = vehicleMembers.map(m => {
-      const existing = attendanceData.find(a => a.membership_id === m._id);
-      return {
-        membership_id: m._id,
-        status: existing ? existing.status : 'absent' // default to absent if not marked
-      };
-    });
+  };
 
+  const handleSaveAttendance = async () => {
     setActionLoading(true);
     try {
-      await attendanceService.markAttendanceBatch({
-        itinerary_id: selectedItinerary._id,
-        vehicle_id: myMembership.vehicle_id,
-        attendances: finalAttendance
-      });
-      
-      // Update local tourAttendances state
-      const updatedTourAtts = tourAttendances.filter(a => !(a.itinerary_id === selectedItinerary._id && a.vehicle_id === myMembership.vehicle_id));
-      const newAtts = finalAttendance.map(f => ({
-        itinerary_id: selectedItinerary._id,
-        vehicle_id: myMembership.vehicle_id,
-        membership_id: f.membership_id,
-        status: f.status
-      }));
-      setTourAttendances([...updatedTourAtts, ...newAtts]);
-
+      if (isCreatorOrAdmin) {
+        const byVehicle = new Map();
+        memberships.filter(m => m.status !== 'left' && m.vehicle_id).forEach(m => {
+          const vId = m.vehicle_id?._id || m.vehicle_id;
+          if (!byVehicle.has(vId)) byVehicle.set(vId, []);
+          byVehicle.get(vId).push(m);
+        });
+        await Promise.all([...byVehicle.entries()].map(([vehicleId, members]) => {
+          const attendances = members.map(m => {
+            const ex = attendanceData.find(a => a.membership_id === m._id);
+            return { membership_id: m._id, status: ex?.status || 'absent' };
+          });
+          return attendanceService.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: vehicleId, attendances });
+        }));
+        setTourAttendances(prev => [
+          ...prev.filter(a => (a.itinerary_id?._id || a.itinerary_id) !== selectedItinerary._id),
+          ...memberships.filter(m => m.status !== 'left' && m.vehicle_id).map(m => {
+            const ex = attendanceData.find(a => a.membership_id === m._id);
+            return { itinerary_id: selectedItinerary._id, vehicle_id: m.vehicle_id?._id || m.vehicle_id, membership_id: m._id, status: ex?.status || 'absent' };
+          })
+        ]);
+      } else {
+        const myMembership = memberships.find(m => (m.user_id?._id || m.user_id) === currentUserId && m.status !== 'left');
+        if (!myMembership?.vehicle_id) { setActionLoading(false); return; }
+        const myVId = myMembership.vehicle_id?._id || myMembership.vehicle_id;
+        const vehicleMembers = memberships.filter(m => (m.vehicle_id?._id || m.vehicle_id) === myVId && m.status !== 'left');
+        const attendances = vehicleMembers.map(m => {
+          const ex = attendanceData.find(a => a.membership_id === m._id);
+          return { membership_id: m._id, status: ex?.status || 'absent' };
+        });
+        await attendanceService.markAttendanceBatch({ itinerary_id: selectedItinerary._id, vehicle_id: myVId, attendances });
+        setTourAttendances(prev => [
+          ...prev.filter(a => !((a.itinerary_id?._id || a.itinerary_id) === selectedItinerary._id && (a.vehicle_id?._id || a.vehicle_id) === myVId)),
+          ...attendances.map(f => ({ itinerary_id: selectedItinerary._id, vehicle_id: myVId, membership_id: f.membership_id, status: f.status }))
+        ]);
+      }
       setAttendanceModalOpen(false);
-      alert("Đã lưu điểm danh thành công!");
+      alert('Da luu diem danh thanh cong!');
     } catch (err) {
       alert(err.response?.data?.error || err.message);
     } finally {
@@ -1171,872 +1202,193 @@ export default function TourDetailPage() {
     }
   }
 
+
+  const isCreatorOrAdmin = isLeaderOrCreator || isAdminPath;
+  const canEditItinerary = isLeaderOrCreator || isAdminPath;
+
   return (
-    <Box sx={{ py: 3, px: { xs: 1, md: 3 } }}>
-      {/* Back navigation & Header */}
-      <Stack direction="row" alignItems="center" spacing={2} mb={3}>
-        <IconButton onClick={handleBack} color="primary" sx={{ border: '1px solid', borderColor: 'divider' }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <LocalOfferIcon fontSize="inherit" /> ID: {tour._id}
-          </Typography>
-          <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-            {t('tour_detail_title')}
-          </Typography>
-        </Box>
-      </Stack>
-
-      {/* Main Tour Banner Info Card */}
-      <Card
-        elevation={0}
-        sx={{
-          borderRadius: 5,
-          overflow: 'hidden',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: '#ffffff',
-          mb: 4,
-          boxShadow: '0 20px 40px -14px rgba(0,0,0,0.25)',
-        }}
-      >
-        <CardContent sx={{ p: { xs: 4, md: 5 } }}>
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={8}>
-              <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={1.5} flexWrap="wrap" useFlexGap>
-                  <Chip
-                    label={tour.status === 'draft' ? t('status_draft') : t('status_published')}
-                    color={tour.status === 'confirmed' ? 'success' : tour.status === 'draft' ? 'warning' : 'default'}
-                    sx={{ fontWeight: 'bold', textTransform: 'uppercase', bgcolor: 'rgba(255,255,255,0.2)', color: '#fff' }}
-                  />
-                  <Typography variant="body2" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <EventIcon fontSize="inherit" />
-                    {new Date(tour.start_time).toLocaleString()} - {new Date(tour.end_time).toLocaleString()}
-                  </Typography>
-                </Stack>
-
-                <Typography variant="h3" sx={{ fontWeight: '800', lineHeight: 1.2 }}>
-                  {tour.name}
-                </Typography>
-
-                <Grid container spacing={2} sx={{ mt: 1 }}>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', p: 1.5, borderRadius: 2 }}>
-                      <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
-                        Người tạo Tour (Creator)
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                        {tour.created_by?.name || 'Hệ thống'}
-                      </Typography>
-                      {tour.created_by?.phone && (
-                        <Typography variant="caption" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <PhoneIcon fontSize="inherit" /> {tour.created_by.phone}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Box sx={{ bgcolor: 'rgba(255, 255, 255, 0.1)', p: 1.5, borderRadius: 2 }}>
-                      <Typography variant="caption" sx={{ opacity: 0.7, display: 'block' }}>
-                        Trưởng Đoàn (Leader)
-                      </Typography>
-                      <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                        {tour.leader_id?.name || 'Chưa phân công'}
-                      </Typography>
-                      {tour.leader_id?.phone && (
-                        <Typography variant="caption" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                          <PhoneIcon fontSize="inherit" /> {tour.leader_id.phone}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Grid>
-                </Grid>
-              </Stack>
-            </Grid>
-
-            {/* Sức chứa & Tiến độ */}
-            <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <Box sx={{ bgcolor: 'rgba(255,255,255,0.1)', p: 3, borderRadius: 3, backdropFilter: 'blur(10px)' }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Typography variant="subtitle2" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <PeopleIcon /> Sức chứa Tour
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                    {activeMembersCount} / {tour.max_capacity}
-                  </Typography>
-                </Stack>
-                <LinearProgress
-                  variant="determinate"
-                  value={tourOccupancyPercent}
-                  sx={{
-                    height: 10,
-                    borderRadius: 5,
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    '& .MuiLinearProgress-bar': {
-                      bgcolor: '#10b981',
-                      borderRadius: 5
-                    }
-                  }}
-                />
-                <Typography variant="caption" sx={{ display: 'block', mt: 1, opacity: 0.8, textAlign: 'right' }}>
-                  Đã sử dụng {tourOccupancyPercent}% sức chứa
-                </Typography>
-              </Box>
-            </Grid>
-          </Grid>
-
-          {/* Action Row */}
-          <Divider sx={{ my: 3, borderColor: 'rgba(255,255,255,0.15)' }} />
-
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="flex-end" sx={{ flexWrap: 'wrap', gap: 2, '& > *': { ml: '0 !important', mb: '0 !important' } }}>
-            {(() => {
-              if (!currentUserId || isAdminPath) return null;
-              const myMembership = memberships.find(m => {
-                const mUserId = m.user_id?._id || m.user_id;
-                return mUserId === currentUserId && m.status !== 'left';
-              });
-              if (!myMembership || !myMembership.vehicle_id) return null;
-              const myVehicle = vehicles.find(v => v._id === myMembership.vehicle_id);
-              if (!myVehicle) return null;
-              
-              return (
-                <Button
-                  variant="contained"
-                  onClick={() => handleOpenViewVehiclePassengers(myVehicle)}
-                  startIcon={<DirectionsCarIcon />}
-                  sx={{
-                    bgcolor: '#ef4444',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#dc2626' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(239,68,68,0.39)'
-                  }}
-                >
-                  Xem xe của tôi
-                </Button>
-              );
-            })()}
-
-            {isLeaderOrCreator && (
-              <>
-                <Button
-                  variant="contained"
-                  onClick={handleOpenEditTour}
-                  startIcon={<EditIcon />}
-                  sx={{
-                    bgcolor: '#ffffff',
-                    color: '#764ba2',
-                    '&:hover': { bgcolor: '#f8f9fa' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(255,255,255,0.2)'
-                  }}
-                >
-                  {t('btn_edit_tour')}
-                </Button>
-
-                <Button
-                  variant="contained"
-                  onClick={() => { setInviteCopied(false); setInviteDialogOpen(true); }}
-                  startIcon={<LinkIcon />}
-                  sx={{
-                    bgcolor: 'rgba(255,255,255,0.2)',
-                    backdropFilter: 'blur(10px)',
-                    color: '#fff',
-                    '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: 'none'
-                  }}
-                >
-                  Tạo link mời
-                </Button>
-              </>
-            )}
-
-            {!isAdminPath && (
-              <>
-                <Button
-                  variant="contained"
-                  onClick={handleOpenAddPassenger}
-                  startIcon={<PersonAddIcon />}
-                  sx={{
-                    bgcolor: '#10b981',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#059669' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(16,185,129,0.39)'
-                  }}
-                >
-                  {t('btn_add_passenger')}
-                </Button>
-                <Button
-                  variant="contained"
-                  onClick={() => setExcelModalOpen(true)}
-                  startIcon={<FormatListBulletedIcon />}
-                  sx={{
-                    bgcolor: '#8b5cf6',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#7c3aed' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(139,92,246,0.39)'
-                  }}
-                >
-                  Thêm bằng Excel
-                </Button>
-              </>
-            )}
-
-            {isLeaderOrCreator && (
-              <>
-                <Button
-                  variant="contained"
-                  onClick={handleOpenAddVehicle}
-                  startIcon={<DirectionsCarIcon />}
-                  sx={{
-                    bgcolor: '#f59e0b',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#d97706' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(245,158,11,0.39)'
-                  }}
-                >
-                  {t('btn_add_vehicle')}
-                </Button>
-
-                <Button
-                  variant="contained"
-                  onClick={handleOpenAssignSeat}
-                  disabled={unassignedMembers.length === 0 || vehicles.length === 0}
-                  startIcon={<AirlineSeatReclineNormalIcon />}
-                  sx={{
-                    bgcolor: '#0ea5e9',
-                    color: '#fff',
-                    '&:hover': { bgcolor: '#0284c7' },
-                    fontWeight: 'bold',
-                    px: 3,
-                    py: 1.2,
-                    borderRadius: 4,
-                    boxShadow: '0 4px 14px 0 rgba(14,165,233,0.39)'
-                  }}
-                >
-                  {t('btn_assign_seat')}
-                </Button>
-              </>
-            )}
-          </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Main Tabs Navigation */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
-        <Tabs 
-          value={activeTab} 
-          onChange={(e, newValue) => setActiveTab(newValue)}
-          variant="scrollable"
-          scrollButtons="auto"
-          sx={{
-            '& .MuiTab-root': { fontWeight: 'bold', fontSize: '1rem', textTransform: 'none', py: 2 },
-            '& .Mui-selected': { color: 'primary.main' }
-          }}
-        >
-          <Tab icon={<PeopleIcon />} iconPosition="start" label="Hành khách & Phương tiện" />
-          <Tab icon={<MapIcon />} iconPosition="start" label="Lịch trình & Điểm danh" />
-        </Tabs>
+    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: '#f8fafc', overflow: 'hidden' }}>
+      
+      {/* 1. COMPACT HEADER */}
+      <Box sx={{ 
+        bgcolor: 'primary.main', color: 'white', pt: 2, pb: 2, px: 2, 
+        boxShadow: '0 4px 10px rgba(0,0,0,0.1)', zIndex: 10
+      }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <IconButton onClick={handleBack} sx={{ color: 'white', p: 0.5 }}>
+            <ArrowBackIcon />
+          </IconButton>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 800, noWrap: true, lineHeight: 1.2 }}>
+              {tour.name}
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center' }}>
+              <EventIcon sx={{ fontSize: 14, mr: 0.5 }} />
+              {new Date(tour.start_time).toLocaleDateString('vi-VN')} - {new Date(tour.end_time).toLocaleDateString('vi-VN')}
+            </Typography>
+          </Box>
+          <Avatar sx={{ width: 32, height: 32, border: '2px solid white' }}>
+            {tour.created_by?.name ? tour.created_by.name[0] : 'A'}
+          </Avatar>
+        </Stack>
       </Box>
 
-      {activeTab === 0 && (
-      <Grid container spacing={4}>
-        {/* Left column: Passengers List */}
-        <Grid item xs={12} lg={7}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <PeopleIcon color="primary" /> {t('passengers_list')}
-            </Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <TextField
-                size="small"
-                placeholder="Tìm tên, SĐT..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                sx={{ minWidth: 200, bgcolor: 'background.paper', borderRadius: 1 }}
+      {/* 2. MAIN SCROLLABLE CONTENT (TABS) */}
+      <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative', pb: 10 }}>
+        {bottomNavValue === 0 && (
+          <OverviewTab 
+            tour={tour} 
+            memberships={memberships} 
+            vehicles={vehicles}
+            canEditItinerary={canEditItinerary}
+            onEditTour={isCreatorOrAdmin ? handleOpenEditTour : undefined}
+            onInviteLink={() => setInviteDialogOpen(true)}
+          />
+        )}
+        
+        {bottomNavValue === 1 && (
+          <PeopleTab 
+            memberships={memberships} 
+            vehicles={vehicles} 
+            groups={groups} 
+            loading={loading}
+            canEditItinerary={canEditItinerary}
+            currentUserId={currentUserId}
+            onEditPassenger={(member) => {
+              setPassengerForm({
+                user_id: member.user_id?._id || member.user_id || '',
+                name: member.user_id?.name || member.guest_info?.name || '',
+                phone: member.user_id?.phone || member.guest_info?.phone || member.phone || '',
+                birth_year: member.user_id?.birth_year || member.guest_info?.birth_year || member.birth_year || '',
+                gender: member.user_id?.gender !== undefined ? (member.user_id.gender ? 'male' : 'female') : (member.guest_info?.gender || member.gender || 'male'),
+                customer_type: member.customer_type,
+                role: member.role,
+                status: member.status || 'pending',
+                is_driver: member.is_driver,
+                group_id: member.group_id?._id || member.group_id || 'none'
+              });
+              setGroupNameInput('');
+              setNewGroupSelected(false);
+              setSelectedPassenger(member);
+              setEditPassengerOpen(true);
+            }}
+            onAssignVehicle={(member) => {
+              setAssignSeatForm({
+                membership_id: member._id,
+                vehicle_id: member.vehicle_id?._id || member.vehicle_id || ''
+              });
+              setAssignSeatOpen(true);
+            }}
+            onDeletePassenger={isCreatorOrAdmin ? handleDeletePassenger : undefined}
+            onLeavePassenger={handleOpenLeaveDialog}
+          />
+        )}
+
+        {bottomNavValue === 2 && (
+          <VehiclesTab 
+            vehicles={vehicles}
+            memberships={memberships}
+            canEditItinerary={canEditItinerary}
+            onVehicleClick={(vehicle) => handleOpenViewVehiclePassengers(vehicle)}
+            onEditVehicle={(vehicle) => {
+              setVehicleForm({
+                license_plate: vehicle.license_plate,
+                plate_color: vehicle.plate_color,
+                seat_count: vehicle.seat_count,
+                driver_name: vehicle.driver_name,
+                driver_phone: vehicle.driver_phone
+              });
+              setSelectedVehicle(vehicle);
+              setEditVehicleOpen(true);
+            }}
+            onDeleteVehicle={isCreatorOrAdmin ? handleDeleteVehicle : undefined}
+          />
+        )}
+
+        {bottomNavValue === 3 && (
+          <ScheduleTab 
+            itineraries={itineraries}
+            tourAttendances={tourAttendances}
+            totalMembers={memberships.length}
+            canEditItinerary={canEditItinerary}
+            onItineraryClick={(itinerary) => handleOpenAttendance(itinerary)}
+            onEditItinerary={(itinerary) => {
+              setEditItineraryId(itinerary._id);
+              setItineraryForm({
+                date: new Date(itinerary.date),
+                location: itinerary.location,
+                activity: itinerary.activity
+              });
+              setItineraryModalOpen(true);
+            }}
+          />
+        )}
+      </Box>
+
+      {/* 3. DYNAMIC FAB (FLOATING ACTION BUTTON) */}
+      {canEditItinerary && (
+        <Box sx={{ position: 'fixed', bottom: 80, right: 16, zIndex: 1000 }}>
+          {bottomNavValue === 1 && (
+            <SpeedDial
+              ariaLabel="People Actions"
+              icon={<SpeedDialIcon />}
+              direction="up"
+              FabProps={{ sx: { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } } }}
+            >
+              <SpeedDialAction
+                icon={<PersonAddIcon />}
+                tooltipTitle="Thêm hành khách"
+                onClick={handleOpenAddPassenger}
               />
-              <Select
-                size="small"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                displayEmpty
-                sx={{ height: 32, fontSize: '0.875rem' }}
-              >
-                <MenuItem value="" sx={{ fontSize: '0.875rem' }}>Đang tham gia</MenuItem>
-                <MenuItem value="left" sx={{ fontSize: '0.875rem' }}>Đã rời</MenuItem>
-                <MenuItem value="all" sx={{ fontSize: '0.875rem' }}>Tất cả</MenuItem>
-              </Select>
-              <Chip label={`${memberships.length} người`} color="primary" size="small" variant="outlined" />
-            </Stack>
-          </Box>
+              {isCreatorOrAdmin && (
+                <SpeedDialAction
+                  icon={<FormatListBulletedIcon />}
+                  tooltipTitle="Import Excel"
+                  onClick={() => setExcelModalOpen(true)}
+                />
+              )}
+            </SpeedDial>
+          )}
 
-          {/* Desktop/Tablet Table View */}
-          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-            <TableContainer component={Paper} sx={{ borderRadius: 3, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <Table>
-                <TableHead sx={{ bgcolor: 'action.hover' }}>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{t('col_name')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{t('col_phone')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Giới tính</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Năm sinh</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Loại khách</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{t('col_role')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>{t('col_status')}</TableCell>
-                    <TableCell sx={{ fontWeight: 'bold' }}>Xe xếp</TableCell>
-                    {showActionColumn && <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('col_action')}</TableCell>}
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {(() => {
-                    const filteredMemberships = memberships.filter(m => {
-                      if (!searchQuery.trim()) return true;
-                      const query = searchQuery.toLowerCase().trim();
-                      const isGuest = !m.user_id;
-                      const name = (isGuest ? m.guest_info?.name : m.user_id?.name) || '';
-                      const phone = (isGuest ? m.guest_info?.phone : m.user_id?.phone) || '';
-                      return name.toLowerCase().includes(query) || phone.toLowerCase().includes(query);
-                    });
+          {bottomNavValue === 2 && (
+            <Fab color="primary" onClick={() => {
+              setVehicleForm({ license_plate: '', plate_color: 'white', seat_count: '', driver_name: '', driver_phone: '' });
+              setAddVehicleOpen(true);
+            }}>
+              <DirectionsCarIcon />
+            </Fab>
+          )}
 
-                    if (filteredMemberships.length === 0) {
-                      return (
-                        <TableRow>
-                          <TableCell colSpan={showActionColumn ? 9 : 8} align="center" sx={{ py: 4 }}>
-                            <Typography color="text.secondary">{t('no_passengers')}</Typography>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    }
-
-                    return filteredMemberships.map((member) => {
-                      const isGuest = !member.user_id;
-                      const name = isGuest ? member.guest_info?.name : member.user_id?.name;
-                      const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
-                      const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
-                      const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'true' : member.user_id?.gender === false ? 'false' : '');
-                      const genderLabel = (genderRaw === 'male' || String(genderRaw) === 'true') ? 'Nam' : (genderRaw === 'female' || String(genderRaw) === 'false') ? 'Nữ' : 'Khác';
-                      const assignedVehicle = vehicles.find(v => v._id === member.vehicle_id);
-
-                      const passengerGroupId = member.group_id?._id || member.group_id;
-                      const groupObj = groups.find(g => g._id === passengerGroupId);
-
-                      return (
-                        <TableRow key={member._id} hover>
-                          <TableCell sx={{ fontWeight: 500 }}>
-                            <Stack direction="row" alignItems="center" spacing={1.5}>
-                              <Avatar {...stringAvatar(name || 'Unknown')} sx={{ ...stringAvatar(name || 'Unknown').sx, width: 32, height: 32, fontSize: '0.875rem' }} />
-                              <Box>
-                                <Stack direction="row" alignItems="center" spacing={0.5}>
-                                  <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                                    {name}
-                                  </Typography>
-                                  {isGuest && (
-                                    <Chip
-                                      label="GUEST"
-                                      size="small"
-                                      sx={{
-                                        fontSize: '0.6rem',
-                                        height: 16,
-                                        bgcolor: '#eceff1',
-                                        color: '#37474f',
-                                        fontWeight: 'bold'
-                                      }}
-                                    />
-                                  )}
-                                </Stack>
-                              </Box>
-                            </Stack>
-                          </TableCell>
-                          <TableCell>{phone || 'Chưa cung cấp SĐT'}</TableCell>
-                          <TableCell>{genderLabel}</TableCell>
-                          <TableCell>{birthYear || '-'}</TableCell>
-                          <TableCell>{member.customer_type === 'child' ? 'Trẻ em' : member.customer_type === 'elderly' ? 'Người già' : 'Người lớn'}</TableCell>
-                          <TableCell>
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                              {getRoleChip(member.role)}
-                              {member.is_driver && (
-                                <Chip
-                                  label="TÀI XẾ"
-                                  color="info"
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem', height: 22, fontWeight: 'bold' }}
-                                />
-                              )}
-                              {assignedVehicle && String(assignedVehicle.representative_id?._id || assignedVehicle.representative_id) === String(member._id) && (
-                                <Chip
-                                  label="TRƯỞNG XE"
-                                  color="secondary"
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem', height: 22, fontWeight: 'bold' }}
-                                />
-                              )}
-                              {groupObj && (
-                                <Chip
-                                  icon={<GroupsIcon sx={{ fontSize: '0.8rem !important' }} />}
-                                  label={groupObj.name}
-                                  color="primary"
-                                  size="small"
-                                  variant="outlined"
-                                  sx={{ fontSize: '0.7rem', height: 22 }}
-                                />
-                              )}
-                            </Stack>
-                          </TableCell>
-                          <TableCell>{getStatusChip(member.status)}</TableCell>
-                          <TableCell>
-                            {assignedVehicle ? renderLicensePlate(assignedVehicle.license_plate, assignedVehicle.plate_color) : (
-                              <Chip
-                                label={t('seat_unassigned')}
-                                color="default"
-                                size="small"
-                                variant="outlined"
-                              />
-                            )}
-                          </TableCell>
-                          {showActionColumn && (
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={0.5} justifyContent="center">
-                                {isLeaderOrCreator && (
-                                  <>
-                                    <Tooltip title="Sửa thông tin">
-                                      <IconButton size="small" color="primary" onClick={() => handleOpenEditPassenger(member)}>
-                                        <EditIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Xóa khách khỏi tour">
-                                      <IconButton size="small" color="error" onClick={() => handleDeletePassenger(member._id)}>
-                                        <DeleteIcon fontSize="small" />
-                                      </IconButton>
-                                    </Tooltip>
-                                  </>
-                                )}
-                                {canLeave(member) && (
-                                  <Tooltip title="Rời tour">
-                                    <IconButton size="small" color="warning" onClick={() => handleOpenLeaveDialog(member)}>
-                                      <ExitToAppIcon fontSize="small" />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
-                              </Stack>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      );
-                    });
-                  })()}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Box>
-
-          {/* Mobile Card View */}
-          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-            <Stack spacing={2}>
-              {(() => {
-                const filteredMemberships = memberships.filter(m => {
-                  if (!searchQuery.trim()) return true;
-                  const query = searchQuery.toLowerCase().trim();
-                  const isGuest = !m.user_id;
-                  const name = (isGuest ? m.guest_info?.name : m.user_id?.name) || '';
-                  const phone = (isGuest ? m.guest_info?.phone : m.user_id?.phone) || '';
-                  return name.toLowerCase().includes(query) || phone.toLowerCase().includes(query);
-                });
-
-                if (filteredMemberships.length === 0) {
-                  return (
-                    <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-                      <Typography color="text.secondary">{t('no_passengers')}</Typography>
-                    </Paper>
-                  );
-                }
-
-                return filteredMemberships.map((member) => {
-                  const isGuest = !member.user_id;
-                  const name = isGuest ? member.guest_info?.name : member.user_id?.name;
-                  const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
-                  const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
-                  const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'true' : member.user_id?.gender === false ? 'false' : '');
-                  const genderLabel = (genderRaw === 'male' || String(genderRaw) === 'true') ? 'Nam' : (genderRaw === 'female' || String(genderRaw) === 'false') ? 'Nữ' : 'Khác';
-                  const assignedVehicle = vehicles.find(v => v._id === member.vehicle_id);
-
-                  const passengerGroupId = member.group_id?._id || member.group_id;
-                  const groupObj = groups.find(g => g._id === passengerGroupId);
-
-                  return (
-                    <Card key={member._id} variant="outlined" sx={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.05)', mb: 2 }}>
-                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                          <Stack direction="row" spacing={1.5} alignItems="center">
-                            <Avatar {...stringAvatar(name || 'Unknown')} sx={{ ...stringAvatar(name || 'Unknown').sx, width: 46, height: 46, fontSize: '1.2rem', fontWeight: 'medium' }} />
-                            <Box>
-                              <Stack direction="row" alignItems="center" spacing={1} mb={0.25}>
-                                <Typography sx={{ fontWeight: 'bold', fontSize: '1.05rem', color: 'text.primary' }}>
-                                  {name}
-                                </Typography>
-                                {isGuest && (
-                                  <Chip
-                                    label="GUEST"
-                                    size="small"
-                                    sx={{ fontSize: '0.6rem', height: 18, bgcolor: '#eceff1', color: '#37474f', fontWeight: 'bold' }}
-                                  />
-                                )}
-                              </Stack>
-                              <Stack direction="row" alignItems="center" spacing={0.5}>
-                                <PhoneIcon sx={{ fontSize: '0.85rem', color: 'text.secondary' }} />
-                                <Typography variant="body2" color="text.secondary">
-                                  {phone || 'Chưa cung cấp SĐT'}
-                                </Typography>
-                              </Stack>
-                            </Box>
-                          </Stack>
-                          <Box sx={{ mt: 0.5 }}>
-                            {getStatusChip(member.status)}
-                          </Box>
-                        </Stack>
-
-                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-
-                        <Grid container spacing={1.5} mb={2}>
-                          <Grid item xs={6}>
-                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontWeight: 500 }}>
-                              Giới tính / Năm sinh
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
-                              {genderLabel} • {birthYear || '-'} • {member.customer_type === 'child' ? 'Trẻ em' : member.customer_type === 'elderly' ? 'Người già' : 'Người lớn'}
-                            </Typography>
-                          </Grid>
-                          <Grid item xs={6}>
-                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontWeight: 500 }}>
-                              Vai trò & Vai vế
-                            </Typography>
-                            <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap>
-                              {getRoleChip(member.role)}
-                              {member.is_driver && (
-                                <Chip
-                                  label="TÀI XẾ" color="info" size="small" variant="outlined"
-                                  sx={{ fontSize: '0.65rem', height: 20, fontWeight: 'bold' }}
-                                />
-                              )}
-                              {assignedVehicle && String(assignedVehicle.representative_id?._id || assignedVehicle.representative_id) === String(member._id) && (
-                                <Chip
-                                  label="TRƯỞNG XE" color="secondary" size="small" variant="outlined"
-                                  sx={{ fontSize: '0.65rem', height: 20, fontWeight: 'bold' }}
-                                />
-                              )}
-                              {groupObj && (
-                                <Chip
-                                  icon={<GroupsIcon sx={{ fontSize: '0.7rem !important' }} />}
-                                  label={groupObj.name} color="primary" size="small" variant="outlined"
-                                  sx={{ fontSize: '0.65rem', height: 20 }}
-                                />
-                              )}
-                            </Stack>
-                          </Grid>
-                          <Grid item xs={12}>
-                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontWeight: 500 }}>
-                              Xe đã xếp
-                            </Typography>
-                            {assignedVehicle ? (
-                              <Box>
-                                {renderLicensePlate(assignedVehicle.license_plate, assignedVehicle.plate_color)}
-                              </Box>
-                            ) : (
-                              <Chip label={t('seat_unassigned')} color="default" size="small" variant="outlined" sx={{ height: 24, fontSize: '0.75rem' }} />
-                            )}
-                          </Grid>
-                        </Grid>
-
-                        {showActionColumn && (
-                          <Box sx={{ pt: 1, borderTop: '1px solid', borderColor: 'divider', display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-                            {isLeaderOrCreator && (
-                              <>
-                                <Button
-                                  size="small" variant="outlined" color="primary"
-                                  startIcon={<EditIcon />}
-                                  onClick={() => handleOpenEditPassenger(member)}
-                                >
-                                  Sửa
-                                </Button>
-                                <Button
-                                  size="small" variant="outlined" color="error"
-                                  startIcon={<DeleteIcon />}
-                                  onClick={() => handleDeletePassenger(member._id)}
-                                >
-                                  Xóa
-                                </Button>
-                              </>
-                            )}
-                            {canLeave(member) && (
-                              <Button
-                                size="small" variant="contained" color="warning"
-                                startIcon={<ExitToAppIcon />}
-                                onClick={() => handleOpenLeaveDialog(member)}
-                              >
-                                Rời tour
-                              </Button>
-                            )}
-                          </Box>
-                        )}
-                      </CardContent>
-                    </Card>
-                  );
-                });
-              })()}
-            </Stack>
-          </Box>
-        </Grid>
-
-        {/* Right column: Vehicles List */}
-        <Grid item xs={12} lg={5}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <DirectionsCarIcon color="warning" /> {t('vehicles_list')}
-            </Typography>
-            <Chip label={`${vehicles.length} xe`} color="warning" size="small" variant="outlined" />
-          </Box>
-
-          <Stack spacing={2.5}>
-            {(() => {
-              const myMembership = currentUserId ? memberships.find(m => {
-                const mUserId = m.user_id?._id || m.user_id;
-                return mUserId === currentUserId && m.status !== 'left';
-              }) : null;
-              const myVehicleId = myMembership?.vehicle_id;
-              
-              const visibleVehicles = isLeaderOrCreator || isAdminPath
-                ? vehicles
-                : vehicles.filter(v => v._id === myVehicleId);
-
-              if (visibleVehicles.length === 0) {
-                return (
-                  <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-                    <Typography color="text.secondary">
-                      {isLeaderOrCreator || isAdminPath ? t('no_vehicles') : 'Bạn chưa được phân công vào xe nào.'}
-                    </Typography>
-                  </Paper>
-                );
-              }
-
-              return visibleVehicles.map((vehicle) => {
-                const assignedCount = memberships.filter(m => m.vehicle_id === vehicle._id && m.status !== 'left').length;
-                const vehicleOccupancyPercent = Math.min(100, Math.round((assignedCount / vehicle.seat_count) * 100));
-
-                return (
-                  <Card key={vehicle._id} variant="outlined" sx={{ borderRadius: 4, overflow: 'hidden', '&:hover': { boxShadow: 3 } }}>
-                    {/* Full Width Prominent License Plate */}
-                    <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider', bgcolor: 'action.hover', display: 'flex', justifyContent: 'center' }}>
-                      {renderLicensePlate(vehicle.license_plate, vehicle.plate_color, true)}
-                    </Box>
-
-                    <CardContent sx={{ p: 3 }}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
-                        <Box>
-                          <Typography variant="body1" sx={{ fontWeight: 'bold' }}>
-                            Tài xế: {vehicle.driver_name || 'Không rõ'}
-                          </Typography>
-                          {vehicle.driver_phone && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                              SĐT: {vehicle.driver_phone}
-                            </Typography>
-                          )}
-                        </Box>
-                        <Box textAlign="right">
-                          <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                            {assignedCount} / {vehicle.seat_count} {t('capacity_seats')}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            Còn {vehicle.seat_count - assignedCount} chỗ trống
-                          </Typography>
-
-                          {/* Action Buttons for Edit & Delete Vehicle — leader/creator only */}
-                          {isLeaderOrCreator && (
-                            <Stack direction="row" spacing={0.5} justifyContent="flex-end" sx={{ mt: 1 }}>
-                              <Tooltip title="Sửa thông tin xe">
-                                <IconButton size="small" color="primary" onClick={() => handleOpenEditVehicle(vehicle)}>
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                              <Tooltip title="Xóa phương tiện">
-                                <IconButton size="small" color="error" onClick={() => handleDeleteVehicle(vehicle._id)}>
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          )}
-                        </Box>
-                      </Stack>
-
-                      <LinearProgress
-                        variant="determinate"
-                        value={vehicleOccupancyPercent}
-                        sx={{
-                          height: 6,
-                          borderRadius: 3,
-                          bgcolor: 'action.hover',
-                          '& .MuiLinearProgress-bar': {
-                            bgcolor: vehicleOccupancyPercent >= 90 ? 'error.main' : vehicleOccupancyPercent >= 50 ? 'warning.main' : 'success.main'
-                          }
-                        }}
-                      />
-
-                      {/* View passengers on vehicle action */}
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        fullWidth
-                        startIcon={<PeopleIcon />}
-                        onClick={() => handleOpenViewVehiclePassengers(vehicle)}
-                        sx={{ mt: 2.5, borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
-                      >
-                        Xem hành khách trên xe
-                      </Button>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            })()}
-          </Stack>
-        </Grid>
-      </Grid>
-      )}
-
-      {activeTab === 1 && (
-        <Box sx={{ minHeight: '50vh' }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-            <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 }}>
-              <MapIcon color="primary" /> Quản lý Lịch trình
-            </Typography>
-            {isLeaderOrCreator && (
-              <Button 
-                variant="contained" 
-                color="primary" 
-                startIcon={<AddCircleOutlineIcon />}
-                onClick={() => {
-                  setEditItineraryId(null);
-                  setItineraryForm({ date: '', location: '', activity: '' });
-                  setItineraryModalOpen(true);
-                }}
-                sx={{ borderRadius: 3, fontWeight: 'bold' }}
-              >
-                Thêm mốc lịch trình
-              </Button>
-            )}
-          </Box>
-          
-          {itineraries.length === 0 ? (
-            <Paper sx={{ p: 5, textAlign: 'center', borderRadius: 4, bgcolor: 'rgba(255,255,255,0.5)' }} elevation={0}>
-              <MapIcon sx={{ fontSize: 60, color: 'text.secondary', opacity: 0.3, mb: 2 }} />
-              <Typography variant="h6" color="text.secondary">Chưa có mốc lịch trình nào</Typography>
-              <Typography variant="body2" color="text.secondary">Tour này hiện chưa có thông tin lịch trình để điểm danh.</Typography>
-            </Paper>
-          ) : (
-            <Grid container spacing={3}>
-              {itineraries.map((itinerary, index) => (
-                <Grid item xs={12} md={6} lg={4} key={itinerary._id}>
-                  <Card variant="outlined" sx={{ borderRadius: 3, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-                    <Box sx={{ position: 'absolute', top: 0, left: 0, width: 6, height: '100%', bgcolor: 'primary.main', borderTopLeftRadius: 12, borderBottomLeftRadius: 12 }} />
-                    <CardContent sx={{ p: 3, pl: 4, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                      <Typography variant="overline" color="primary" sx={{ fontWeight: 'bold' }}>Mốc {index + 1}</Typography>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 1 }}>{new Date(itinerary.date).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}</Typography>
-                      <Typography variant="body1" sx={{ mb: 1, display: 'flex', gap: 1 }}><strong style={{ minWidth: 80 }}>Địa điểm:</strong> {itinerary.location}</Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, mb: 2, display: 'flex', gap: 1 }}><strong style={{ minWidth: 80, color: '#333' }}>Hoạt động:</strong> {itinerary.activity}</Typography>
-                      
-                      {vehicles.length > 0 && (
-                        <Box sx={{ mt: 1, mb: 2 }}>
-                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: 'text.secondary', display: 'block', mb: 0.5 }}>Tiến độ điểm danh:</Typography>
-                          <Stack spacing={0.5}>
-                            {vehicles.map(vehicle => {
-                              const vehicleMembersCount = memberships.filter(m => m.vehicle_id === vehicle._id && m.status !== 'left').length;
-                              if (vehicleMembersCount === 0) return null;
-                              
-                              const presentCount = tourAttendances.filter(a => a.itinerary_id === itinerary._id && a.vehicle_id === vehicle._id && a.status === 'present').length;
-                              const isComplete = presentCount === vehicleMembersCount;
-                              
-                              return (
-                                <Box key={vehicle._id} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: isComplete ? 'rgba(76, 175, 80, 0.1)' : 'grey.100', px: 1.5, py: 0.5, borderRadius: 1.5, border: '1px solid', borderColor: isComplete ? 'success.light' : 'transparent' }}>
-                                  <Typography variant="caption" sx={{ fontWeight: 'medium', color: isComplete ? 'success.dark' : 'text.primary' }}>
-                                    <DirectionsCarIcon sx={{ fontSize: 12, verticalAlign: 'middle', mr: 0.5, mb: 0.2 }} />
-                                    {vehicle.license_plate}
-                                  </Typography>
-                                  <Typography variant="caption" sx={{ fontWeight: 'bold', color: isComplete ? 'success.main' : 'text.secondary' }}>
-                                    {presentCount}/{vehicleMembersCount}
-                                  </Typography>
-                                </Box>
-                              )
-                            })}
-                          </Stack>
-                        </Box>
-                      )}
-
-                      <Divider sx={{ my: 2 }} />
-                      
-                      <Stack direction="row" spacing={1} justifyContent="space-between">
-                        <Button 
-                          variant="contained" 
-                          size="small" 
-                          color="secondary" 
-                          onClick={() => handleOpenAttendance(itinerary)}
-                          sx={{ borderRadius: 2, fontWeight: 'bold' }}
-                        >
-                          Điểm danh
-                        </Button>
-                        
-                        {isLeaderOrCreator && (
-                          <Stack direction="row" spacing={0.5}>
-                            <IconButton size="small" color="primary" onClick={() => {
-                              setEditItineraryId(itinerary._id);
-                              // format for datetime-local input
-                              const dt = new Date(itinerary.date);
-                              dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
-                              setItineraryForm({
-                                date: dt.toISOString().slice(0, 16),
-                                location: itinerary.location,
-                                activity: itinerary.activity
-                              });
-                              setItineraryModalOpen(true);
-                            }}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton size="small" color="error" onClick={() => handleDeleteItinerary(itinerary._id)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Stack>
-                        )}
-                      </Stack>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
+          {bottomNavValue === 3 && (
+            <Fab color="primary" onClick={() => {
+              setEditItineraryId(null);
+              setItineraryForm({ date: null, location: '', activity: '' });
+              setItineraryModalOpen(true);
+            }}>
+              <AddCircleOutlineIcon />
+            </Fab>
           )}
         </Box>
       )}
 
+      {/* 4. BOTTOM NAVIGATION */}
+      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20 }} elevation={8}>
+        <BottomNavigation
+          showLabels
+          value={bottomNavValue}
+          onChange={(event, newValue) => {
+            setBottomNavValue(newValue);
+          }}
+          sx={{ height: 65, '& .MuiBottomNavigationAction-label': { fontWeight: 600 } }}
+        >
+          <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon />} />
+          <BottomNavigationAction label="Hành khách" icon={<GroupsIcon />} />
+          <BottomNavigationAction label="Xe" icon={<DirectionsBusIcon />} />
+          <BottomNavigationAction label="Lịch trình" icon={<AccessTimeFilledIcon />} />
+        </BottomNavigation>
+      </Paper>
+
+      {/* Modals are rendered below inside the same root Box */}
       {/* ========================================================================= */}
       {/* MODAL 0A: EDIT/ADD ITINERARY */}
       {/* ========================================================================= */}
@@ -2091,70 +1443,227 @@ export default function TourDetailPage() {
       {/* ========================================================================= */}
       {/* MODAL 0B: ATTENDANCE */}
       {/* ========================================================================= */}
-      <Dialog open={attendanceModalOpen} onClose={() => !actionLoading && setAttendanceModalOpen(false)} PaperProps={{ sx: { borderRadius: 3, p: 1, maxWidth: 600, width: '100%' } }}>
-        <DialogTitle sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
-          Điểm danh Hành khách
+      <Dialog 
+        open={attendanceModalOpen} 
+        onClose={() => !actionLoading && setAttendanceModalOpen(false)} 
+        PaperProps={{ sx: { borderRadius: 3, p: 0, maxWidth: 640, width: '100%', maxHeight: '90vh' } }}
+        fullWidth
+      >
+        {/* Header */}
+        <Box sx={{ 
+          px: 3, pt: 2.5, pb: 2,
+          background: 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)',
+          color: 'white'
+        }}>
+          <Typography variant="h6" fontWeight={800}>📋 Điểm danh Hành khách</Typography>
           {selectedItinerary && (
-            <Typography variant="body2" sx={{ display: 'block', color: 'text.secondary', mt: 1 }}>
-              Mốc: {new Date(selectedItinerary.date).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })} - {selectedItinerary.location}
+            <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.5 }}>
+              🕐 {new Date(selectedItinerary.date).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })} &nbsp;·&nbsp; 📍 {selectedItinerary.location}
             </Typography>
           )}
-        </DialogTitle>
-        <DialogContent dividers>
+          {/* Summary stats */}
+          {(() => {
+            const total = attendanceData.length;
+            const present = attendanceData.filter(a => a.status === 'present').length;
+            return total > 0 ? (
+              <Box sx={{ mt: 1.5, display: 'flex', gap: 1 }}>
+                <Chip label={`✅ Có mặt: ${present}`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.25)', color: 'white', fontWeight: 700, height: 24 }} />
+                <Chip label={`❌ Vắng: ${total - present}`} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: 'white', fontWeight: 700, height: 24 }} />
+              </Box>
+            ) : null;
+          })()}
+        </Box>
+
+        <DialogContent sx={{ p: 2, overflowY: 'auto' }}>
           {(() => {
             const myMembership = memberships.find(m => {
               const mUserId = m.user_id?._id || m.user_id;
               return mUserId === currentUserId && m.status !== 'left';
             });
-            if (!myMembership || !myMembership.vehicle_id) return <Typography>Không tìm thấy xe của bạn.</Typography>;
-            
-            const vehicleMembers = memberships.filter(m => m.vehicle_id === myMembership.vehicle_id && m.status !== 'left');
-            if (vehicleMembers.length === 0) return <Typography>Không có hành khách nào trên xe này.</Typography>;
-            
-            return (
-              <Stack spacing={2}>
-                {vehicleMembers.map(member => {
-                  const name = member.user_id?.name || member.guest_info?.name || 'Không rõ';
-                  const phone = member.user_id?.phone || member.guest_info?.phone || '';
-                  const attendanceRec = attendanceData.find(a => a.membership_id === member._id);
-                  const isPresent = attendanceRec ? attendanceRec.status === 'present' : false;
-                  
-                  return (
-                    <Paper key={member._id} variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderRadius: 2, borderColor: isPresent ? 'success.light' : 'error.light', bgcolor: isPresent ? 'rgba(76, 175, 80, 0.05)' : 'rgba(244, 67, 54, 0.05)' }}>
-                      <Box display="flex" alignItems="center" gap={2}>
-                        <Avatar {...stringAvatar(name)} sx={{ ...stringAvatar(name).sx, width: 40, height: 40 }} />
-                        <Box>
-                          <Typography variant="body1" fontWeight="bold">{name}</Typography>
-                          <Typography variant="caption" color="text.secondary">{phone}</Typography>
-                        </Box>
-                      </Box>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={isPresent}
-                            onChange={() => handleToggleAttendance(member._id)}
-                            icon={<CancelIcon color="error" />}
-                            checkedIcon={<CheckCircleIcon color="success" />}
-                            size="large"
-                          />
-                        }
-                        label={isPresent ? "Có mặt" : "Vắng"}
-                        labelPlacement="start"
-                        sx={{ m: 0, '& .MuiFormControlLabel-label': { fontWeight: 'bold', color: isPresent ? 'success.main' : 'error.main', mr: 1 } }}
+
+            // Determine scope: admin/leader sees all; members see own vehicle
+            let scopeMembers = [];
+            if (isCreatorOrAdmin) {
+              scopeMembers = memberships.filter(m => m.status !== 'left');
+            } else {
+              if (!myMembership?.vehicle_id) {
+                return (
+                  <Box textAlign="center" py={3}>
+                    <Typography fontSize="2rem">🚗</Typography>
+                    <Typography color="text.secondary" mt={1}>Bạn chưa được xếp xe nên không thể điểm danh.</Typography>
+                  </Box>
+                );
+              }
+              scopeMembers = memberships.filter(m => {
+                const vId = m.vehicle_id?._id || m.vehicle_id;
+                const myVId = myMembership.vehicle_id?._id || myMembership.vehicle_id;
+                return vId === myVId && m.status !== 'left';
+              });
+            }
+
+            if (scopeMembers.length === 0) {
+              return <Typography textAlign="center" py={3} color="text.secondary">Không có hành khách nào.</Typography>;
+            }
+
+            // Group members by group_id
+            const groupMap = new Map();
+            scopeMembers.forEach(m => {
+              const gId = m.group_id?._id || m.group_id;
+              const key = gId ? gId.toString() : '__none__';
+              if (!groupMap.has(key)) groupMap.set(key, []);
+              groupMap.get(key).push(m);
+            });
+
+            // Render each group section
+            const sections = [];
+            groupMap.forEach((gMembers, key) => {
+              const groupObj = key !== '__none__' ? groups.find(g => g._id.toString() === key) : null;
+              const groupName = groupObj?.name || (key === '__none__' ? 'Chưa có nhóm' : `Nhóm (${key.slice(-4)})`);
+              const groupMemberIds = gMembers.map(m => m._id);
+              const groupPresentCount = gMembers.filter(m => {
+                const rec = attendanceData.find(a => a.membership_id === m._id);
+                return rec?.status === 'present';
+              }).length;
+              const allPresent = groupPresentCount === gMembers.length;
+
+              sections.push(
+                <Box key={key} sx={{ mb: 2 }}>
+                  {/* Group header with quick-select */}
+                  <Box sx={{ 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    px: 1.5, py: 1, mb: 1,
+                    bgcolor: key === '__none__' ? '#f8fafc' : '#eff6ff',
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: key === '__none__' ? '#e2e8f0' : '#bfdbfe'
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={700} color={key === '__none__' ? 'text.secondary' : '#1d4ed8'}>
+                        👥 {groupName}
+                      </Typography>
+                      <Chip 
+                        label={`${groupPresentCount}/${gMembers.length}`} 
+                        size="small" 
+                        color={allPresent ? 'success' : 'default'}
+                        sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }}
                       />
-                    </Paper>
-                  );
-                })}
-              </Stack>
-            );
+                    </Box>
+                    <Box sx={{ display: 'flex', gap: 0.5 }}>
+                      <Button 
+                        size="small" 
+                        variant="contained" 
+                        color="success"
+                        onClick={() => handleToggleGroupAttendance(groupMemberIds, true)}
+                        sx={{ height: 28, fontSize: '0.72rem', px: 1.5, borderRadius: 2, minWidth: 0 }}
+                      >
+                        ✅ Cả nhóm
+                      </Button>
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        color="error"
+                        onClick={() => handleToggleGroupAttendance(groupMemberIds, false)}
+                        sx={{ height: 28, fontSize: '0.72rem', px: 1.5, borderRadius: 2, minWidth: 0 }}
+                      >
+                        ❌ Vắng hết
+                      </Button>
+                    </Box>
+                  </Box>
+
+                  {/* Members */}
+                  <Stack spacing={1}>
+                    {gMembers.map(member => {
+                      const name = member.user_id?.name || member.guest_info?.name || 'Không rõ';
+                      const phone = member.user_id?.phone || member.guest_info?.phone || '';
+                      const birthYear = member.guest_info?.birth_year || (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : null);
+                      const age = birthYear ? new Date().getFullYear() - birthYear : null;
+                      const rec = attendanceData.find(a => a.membership_id === member._id);
+                      const isPresent = rec?.status === 'present';
+
+                      return (
+                        <Paper 
+                          key={member._id} 
+                          variant="outlined" 
+                          onClick={() => handleToggleAttendance(member._id)}
+                          sx={{ 
+                            p: 1.5, 
+                            display: 'flex', alignItems: 'center', 
+                            justifyContent: 'space-between', 
+                            borderRadius: 2,
+                            cursor: 'pointer',
+                            borderColor: isPresent ? '#86efac' : '#fca5a5',
+                            bgcolor: isPresent ? '#f0fdf4' : '#fff5f5',
+                            transition: 'all 0.15s ease',
+                            '&:hover': { transform: 'scale(1.01)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+                          }}
+                        >
+                          <Box display="flex" alignItems="center" gap={1.5}>
+                            <Avatar 
+                              {...stringAvatar(name)} 
+                              sx={{ 
+                                ...stringAvatar(name).sx, 
+                                width: 38, height: 38,
+                                border: '2px solid',
+                                borderColor: isPresent ? '#86efac' : '#fca5a5'
+                              }} 
+                            />
+                            <Box>
+                              <Typography variant="body2" fontWeight={700} lineHeight={1.3}>{name}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {[phone, age ? `${age} tuổi` : null].filter(Boolean).join(' · ')}
+                              </Typography>
+                            </Box>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                            <Typography variant="caption" fontWeight={700} color={isPresent ? 'success.main' : 'error.main'}>
+                              {isPresent ? 'Có mặt' : 'Vắng'}
+                            </Typography>
+                            <Checkbox
+                              checked={isPresent}
+                              onChange={() => handleToggleAttendance(member._id)}
+                              onClick={e => e.stopPropagation()}
+                              icon={<CancelIcon color="error" />}
+                              checkedIcon={<CheckCircleIcon color="success" />}
+                              size="medium"
+                              sx={{ p: 0.5 }}
+                            />
+                          </Box>
+                        </Paper>
+                      );
+                    })}
+                  </Stack>
+                </Box>
+              );
+            });
+
+            return <Box>{sections}</Box>;
           })()}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
+
+        <DialogActions sx={{ px: 2.5, py: 2, borderTop: '1px solid #e2e8f0' }}>
           <Button onClick={() => setAttendanceModalOpen(false)} color="inherit" variant="outlined" disabled={actionLoading}>
             Đóng
           </Button>
-          <Button onClick={handleSaveAttendance} variant="contained" color="secondary" disabled={actionLoading}>
-            {actionLoading ? 'Đang lưu...' : 'Lưu Điểm danh'}
+          {/* Mark all present */}
+          <Button 
+            variant="outlined"
+            color="success"
+            disabled={actionLoading}
+            onClick={() => {
+              const scopeIds = (() => {
+                if (isCreatorOrAdmin) return memberships.filter(m => m.status !== 'left').map(m => m._id);
+                const myM = memberships.find(m => (m.user_id?._id || m.user_id) === currentUserId && m.status !== 'left');
+                if (!myM?.vehicle_id) return [];
+                const myVId = myM.vehicle_id?._id || myM.vehicle_id;
+                return memberships.filter(m => (m.vehicle_id?._id || m.vehicle_id) === myVId && m.status !== 'left').map(m => m._id);
+              })();
+              handleToggleGroupAttendance(scopeIds, true);
+            }}
+          >
+            ✅ Tất cả có mặt
+          </Button>
+          <Button onClick={handleSaveAttendance} variant="contained" color="secondary" disabled={actionLoading} sx={{ minWidth: 130 }}>
+            {actionLoading ? 'Đang lưu...' : '💾 Lưu Điểm danh'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -2706,6 +2215,43 @@ export default function TourDetailPage() {
                 <MenuItem value="driver">Tài xế (Driver)</MenuItem>
               </Select>
             </FormControl>
+
+            {/* Status */}
+            {isCreatorOrAdmin && (
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Trạng thái</InputLabel>
+                <Select
+                  value={passengerForm.status}
+                  label="Trạng thái"
+                  onChange={(e) => setPassengerForm({ ...passengerForm, status: e.target.value })}
+                >
+                  <MenuItem value="pending">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#f59e0b', flexShrink: 0 }} />
+                      Chờ duyệt (Pending)
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="approved">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10b981', flexShrink: 0 }} />
+                      Đã duyệt (Approved)
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="rejected">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#ef4444', flexShrink: 0 }} />
+                      Từ chối (Rejected)
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="removed">
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#6b7280', flexShrink: 0 }} />
+                      Đã xóa (Removed)
+                    </Box>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            )}
 
             <Box sx={{ mt: 1, display: 'flex', alignItems: 'center' }}>
               <input

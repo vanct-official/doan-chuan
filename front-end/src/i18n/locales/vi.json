@@ -40,7 +40,6 @@
   "modal_complete_title": "✨ Hoàn Tất Thông Tin Cá Nhân",
   "modal_complete_desc": "Chào mừng bạn đến với hệ thống du lịch của chúng tôi! Để đảm bảo an toàn và hỗ trợ liên hệ lịch trình khi tham gia các Tour du lịch, vui lòng hoàn thành một số thông tin cơ bản sau đây.",
   "modal_complete_btn": "Hoàn Tất & Tiếp Tục",
-
   "hello": "Xin chào",
   "profile": "Trang cá nhân",
   "logout": "Đăng xuất",
@@ -48,7 +47,6 @@
   "logout_confirm_desc": "Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?",
   "logout_confirm_desc_admin": "Bạn có chắc chắn muốn đăng xuất khỏi trang quản trị không?",
   "cancel": "Hủy",
-
   "col_name": "Họ và Tên",
   "col_email": "Email",
   "col_phone": "Số điện thoại",
@@ -60,7 +58,6 @@
   "col_start_time": "Thời gian bắt đầu",
   "col_status": "Trạng thái",
   "col_capacity": "Sức chứa",
-
   "admin_users_title": "Quản lý Người Dùng",
   "admin_tours_title": "Quản lý Tour",
   "admin_users_add": "Thêm người dùng",
@@ -68,8 +65,8 @@
   "admin_users_none": "Không có người dùng nào trong hệ thống.",
   "admin_tours_none": "Không có tour nào trong hệ thống.",
   "btn_edit": "Sửa",
+  "btn_cancel": "C",
   "btn_delete": "Xóa",
-
   "admin_tours_add_modal_title": "✨ Tạo Tour Mới",
   "admin_tours_add_modal_btn": "Tạo Tour",
   "tour_name": "Tên tour",
@@ -77,6 +74,7 @@
   "tour_end_time": "Ngày kết thúc",
   "tour_capacity": "Sức chứa",
   "tour_create_success": "Tạo tour mới thành công!",
+  "tour_description": "Mô tả Tour",
   "tour_detail_title": "Chi tiết Tour",
   "tour_info": "Thông tin Tour",
   "passengers_list": "Danh sách hành khách",

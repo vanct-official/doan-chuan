@@ -40,7 +40,6 @@
   "modal_complete_title": "✨ 個人情報の入力完了",
   "modal_complete_desc": "旅行管理システムへようこそ！ツアーに参加する際の安全確保 và スケジュール連絡のため、以下の基本情報を入力してください。",
   "modal_complete_btn": "完了して続行",
-
   "hello": "こんにちは",
   "profile": "プロフィール",
   "logout": "ログアウト",
@@ -48,7 +47,6 @@
   "logout_confirm_desc": "システムからログアウトしてもよろしいですか？",
   "logout_confirm_desc_admin": "管理パネルからログアウトしてもよろしいですか？",
   "cancel": "キャンセル",
-
   "col_name": "氏名",
   "col_email": "メールアドレス",
   "col_phone": "電話番号",
@@ -60,7 +58,6 @@
   "col_start_time": "開始時間",
   "col_status": "ステータス",
   "col_capacity": "定員",
-
   "admin_users_title": "ユーザー管理",
   "admin_tours_title": "ツアー管理",
   "admin_users_add": "ユーザー追加",
@@ -68,8 +65,8 @@
   "admin_users_none": "システムにユーザーがいません。",
   "admin_tours_none": "システムにツアーがありません。",
   "btn_edit": "編集",
+  "btn_cancel": "キャンセル",
   "btn_delete": "削除",
-
   "admin_tours_add_modal_title": "✨ 新規ツアー作成",
   "admin_tours_add_modal_btn": "ツアーを作成",
   "tour_name": "ツアー名",
@@ -77,6 +74,7 @@
   "tour_end_time": "終了日時",
   "tour_capacity": "定員",
   "tour_create_success": "新規ツアーの作成に成功しました！",
+  "tour_description": "ツアーの説明",
   "tour_detail_title": "ツアー詳細",
   "tour_info": "ツアー情報",
   "passengers_list": "乗客リスト",

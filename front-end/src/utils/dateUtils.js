@@ -1,27 +1,38 @@
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+// Khởi tạo plugin utc cho dayjs
+dayjs.extend(utc);
 
 /**
- * Format Date object hoặc ISO string từ Backend thành string 'YYYY-MM-DDTHH:mm' 
- * để gắn vào value của TextField type="datetime-local" trên React.
- * Ngăn ngừa lỗi "Nhập một giá trị hợp lệ" trên Safari.
- * @param {string|Date} dateString - ISO Date string hoặc Date object
- * @returns {string} - Chuỗi định dạng cho datetime-local input
+ * [SUBMIT API] Chuyển đổi Local Time sang chuỗi chuẩn UTC ISO để gửi lên backend
+ * @param {dayjs.Dayjs | string | Date} date - Local time
+ * @returns {string | null} Chuỗi ISO định dạng UTC (VD: "2026-06-07T03:00:00.000Z")
  */
-export const formatForDateTimeLocal = (dateString) => {
-  if (!dateString) return '';
-  return dayjs(dateString).format('YYYY-MM-DDTHH:mm');
+export const toUTC = (date) => {
+  if (!date || !dayjs(date).isValid()) return null;
+  // .utc() đảm bảo đối tượng đang ở múi giờ UTC, sau đó xuất ra ISO format
+  return dayjs(date).utc().toISOString();
 };
 
 /**
- * Convert string từ datetime-local sang ISO string chuẩn UTC 
- * để gửi request tạo/update lên Backend an toàn.
- * Hàm này dùng dayjs để tự động parse the local string một cách nhất quán 
- * giữa mọi trình duyệt (Safari, Chrome).
- * @param {string} localString - Chuỗi có định dạng 'YYYY-MM-DDTHH:mm'
- * @returns {string} - Chuỗi định dạng chuẩn ISO UTC
+ * [FETCH API] Chuyển đổi UTC string từ backend sang Local Time dayjs object
+ * @param {string | Date} utcDate - Thời gian từ Server (có chứa 'Z' hoặc offset)
+ * @returns {dayjs.Dayjs | null} Đối tượng dayjs ở múi giờ hiện tại của user (Local)
  */
-export const parseDateTimeLocalToISO = (localString) => {
-  if (!localString) return '';
-  // dayjs tự động hiểu string này ở Local Timezone hiện tại của thiết bị
-  return dayjs(localString).toISOString(); 
+export const toLocal = (utcDate) => {
+  if (!utcDate) return null;
+  // dayjs mặc định parse chuỗi ISO thành Local Time của thiết bị hiện tại
+  return dayjs(utcDate).local();
 };
+
+export const formatForDateTimeLocal = (date) => {
+  if (!date) return '';
+  return dayjs(date).format('YYYY-MM-DDTHH:mm');
+};
+
+export const parseDateTimeLocalToISO = (dateString) => {
+  if (!dateString) return null;
+  return dayjs(dateString).toISOString();
+};
+

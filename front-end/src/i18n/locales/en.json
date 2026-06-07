@@ -40,7 +40,6 @@
   "modal_complete_title": "✨ Complete Personal Information",
   "modal_complete_desc": "Welcome to our travel system! To ensure safety and schedule contacts when participating in Tour travels, please complete these basic details.",
   "modal_complete_btn": "Complete & Continue",
-
   "hello": "Hello",
   "profile": "Profile",
   "logout": "Logout",
@@ -48,7 +47,6 @@
   "logout_confirm_desc": "Are you sure you want to log out of the system?",
   "logout_confirm_desc_admin": "Are you sure you want to log out of the admin panel?",
   "cancel": "Cancel",
-
   "col_name": "Full Name",
   "col_email": "Email",
   "col_phone": "Phone Number",
@@ -60,7 +58,6 @@
   "col_start_time": "Start Time",
   "col_status": "Status",
   "col_capacity": "Capacity",
-
   "admin_users_title": "User Management",
   "admin_tours_title": "Tour Management",
   "admin_users_add": "Add User",
@@ -68,8 +65,8 @@
   "admin_users_none": "No users in the system.",
   "admin_tours_none": "No tours in the system.",
   "btn_edit": "Edit",
+  "btn_cancel": "Cancel",
   "btn_delete": "Delete",
-
   "admin_tours_add_modal_title": "✨ Create New Tour",
   "admin_tours_add_modal_btn": "Create Tour",
   "tour_name": "Tour Name",
@@ -77,6 +74,7 @@
   "tour_end_time": "End Time",
   "tour_capacity": "Capacity",
   "tour_create_success": "New tour created successfully!",
+  "tour_description": "Tour Description",
   "tour_detail_title": "Tour Details",
   "tour_info": "Tour Information",
   "passengers_list": "Passengers List",

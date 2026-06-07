@@ -21,4 +21,17 @@ api.interceptors.request.use(
   }
 );
 
+// Auto logout on 401 Unauthorized
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.dispatchEvent(new Event('userUpdated'));
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
