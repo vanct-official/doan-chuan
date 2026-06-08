@@ -7,7 +7,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { useTranslation } from 'react-i18next';
+import { useTranslate } from '../../../hooks/useTranslate';
 
 export default function VehiclesTab({ 
   vehicles, 
@@ -17,7 +17,7 @@ export default function VehiclesTab({
   onDeleteVehicle,
   canEditItinerary 
 }) {
-  const { t } = useTranslation();
+  const { t } = useTranslate(['common', 'tour']);
 
   const [search, setSearch] = React.useState('');
   const [filterMode, setFilterMode] = React.useState('all'); // 'all', 'available', 'full'
@@ -49,7 +49,7 @@ export default function VehiclesTab({
         <TextField
           fullWidth
           size="small"
-          placeholder="Tìm biển số hoặc tài xế..."
+          placeholder={t('tour_search_vehicle_placeholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           InputProps={{
@@ -66,21 +66,21 @@ export default function VehiclesTab({
         {/* Filter Chips */}
         <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
           <Chip 
-            label="Tất cả" 
+            label={t('tour_filter_all')} 
             onClick={() => setFilterMode('all')}
             color={filterMode === 'all' ? 'primary' : 'default'}
             variant={filterMode === 'all' ? 'filled' : 'outlined'}
             sx={{ fontWeight: filterMode === 'all' ? 600 : 400 }}
           />
           <Chip 
-            label="Còn chỗ" 
+            label={t('tour_vehicle_available')} 
             onClick={() => setFilterMode('available')}
             color={filterMode === 'available' ? 'success' : 'default'}
             variant={filterMode === 'available' ? 'filled' : 'outlined'}
             sx={{ fontWeight: filterMode === 'available' ? 600 : 400 }}
           />
           <Chip 
-            label="Đã đầy" 
+            label={t('tour_vehicle_full')} 
             onClick={() => setFilterMode('full')}
             color={filterMode === 'full' ? 'error' : 'default'}
             variant={filterMode === 'full' ? 'filled' : 'outlined'}
@@ -92,7 +92,7 @@ export default function VehiclesTab({
       <Box sx={{ p: 2, flex: 1, overflowY: 'auto' }}>
       {filteredVehicles.length === 0 ? (
         <Typography textAlign="center" color="text.secondary" sx={{ mt: 4 }}>
-          Không tìm thấy phương tiện nào.
+          {t('tour_no_vehicles_found')}
         </Typography>
       ) : (
         <Grid container spacing={2}>
@@ -125,7 +125,7 @@ export default function VehiclesTab({
                               {vehicle.license_plate}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" noWrap>
-                              Tài xế: {vehicle.driver_name || 'Chưa cập nhật'}
+                              {t('driver_name')}: {vehicle.driver_name || t('profile_unspecified')}
                             </Typography>
                           </Box>
                         </Box>
@@ -154,7 +154,7 @@ export default function VehiclesTab({
                       
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5, alignItems: 'center' }}>
                         <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
-                          Chỗ ngồi
+                          {t('tour_capacity')}
                         </Typography>
                         <Chip 
                           label={`${occupancy} / ${capacity}`} 

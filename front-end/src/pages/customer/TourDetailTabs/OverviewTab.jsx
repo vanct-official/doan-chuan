@@ -11,9 +11,12 @@ import EventIcon from '@mui/icons-material/Event';
 import EditIcon from '@mui/icons-material/Edit';
 import LinkIcon from '@mui/icons-material/Link';
 import { heroGradient } from '../tourDetailTheme';
+import { useTranslate } from '../../../hooks/useTranslate';
 
 export default function OverviewTab({ tour, memberships, vehicles, canEditItinerary, onEditTour, onInviteLink }) {
   const theme = useTheme();
+  const { t, currentLanguage } = useTranslate(['common', 'tour']);
+  const localeCode = currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
 
   const totalCapacity = vehicles.reduce((sum, v) => sum + (v.seat_count || 0), 0);
   const totalAssigned = memberships.filter(m => m.vehicle_id).length;
@@ -53,10 +56,10 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography variant="caption" sx={{ opacity: 0.8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold' }}>
-                Trưởng đoàn
+                {t('tour_leader')}
               </Typography>
               <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-                {tour.leader_id?.name || 'Chưa cập nhật'}
+                {tour.leader_id?.name || t('profile_unspecified')}
               </Typography>
               {tour.leader_id?.phone && (
                 <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', opacity: 0.9, mt: 0.5 }}>
@@ -67,7 +70,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
             </Box>
             <Stack direction="column" spacing={0.5}>
               {canEditItinerary && onEditTour && (
-                <Tooltip title="Chỉnh sửa tour">
+                <Tooltip title={t('btn_edit_tour')}>
                   <IconButton
                     onClick={onEditTour}
                     size="small"
@@ -78,7 +81,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
                 </Tooltip>
               )}
               {onInviteLink && (
-                <Tooltip title="Link mời tham gia">
+                <Tooltip title={t('tour_invite_link_title')}>
                   <IconButton
                     onClick={onInviteLink}
                     size="small"
@@ -94,21 +97,21 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
           <Box sx={{ bgcolor: 'rgba(255,255,255,0.15)', borderRadius: 3, p: 2, backdropFilter: 'blur(10px)' }}>
             <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 1, fontWeight: 600 }}>
               <EventIcon sx={{ fontSize: 18, mr: 1 }} />
-              Lịch trình dự kiến
+              {t('tour_planned_schedule')}
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
-              Bắt đầu: {new Date(tour.start_time).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}
+              {t('col_start_time')}: {new Date(tour.start_time).toLocaleString(localeCode, { dateStyle: 'medium', timeStyle: 'short' })}
             </Typography>
             <br />
             <Typography variant="caption" sx={{ opacity: 0.9 }}>
-              Kết thúc: {new Date(tour.end_time).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })}
+              {t('tour_end_time')}: {new Date(tour.end_time).toLocaleString(localeCode, { dateStyle: 'medium', timeStyle: 'short' })}
             </Typography>
           </Box>
         </CardContent>
       </Card>
 
       <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
-        Tình trạng chung
+        {t('tour_general_status')}
       </Typography>
 
       <Grid container spacing={2}>
@@ -119,17 +122,17 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
                 <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: alpha(theme.palette.primary.main, 0.15), color: 'primary.main', mr: 1 }}>
                   <GroupsIcon sx={{ fontSize: 20 }} />
                 </Box>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>Hành khách</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{t('passengers_list')}</Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
                 {totalMembers}
               </Typography>
               <Stack direction="row" spacing={0.5} mt={0.5} flexWrap="wrap">
                 {approvedMembers > 0 && (
-                  <Chip label={`${approvedMembers} duyệt`} size="small" color="success" sx={{ height: 18, fontSize: '0.6rem' }} />
+                  <Chip label={`${approvedMembers} ${t('tour_status_approved')}`} size="small" color="success" sx={{ height: 18, fontSize: '0.6rem' }} />
                 )}
                 {pendingMembers > 0 && (
-                  <Chip label={`${pendingMembers} chờ`} size="small" color="warning" sx={{ height: 18, fontSize: '0.6rem' }} />
+                  <Chip label={`${pendingMembers} ${t('tour_status_pending')}`} size="small" color="warning" sx={{ height: 18, fontSize: '0.6rem' }} />
                 )}
               </Stack>
             </CardContent>
@@ -143,13 +146,13 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
                 <Box sx={{ p: 0.8, borderRadius: 2, bgcolor: alpha(theme.palette.warning.main, 0.15), color: 'warning.main', mr: 1 }}>
                   <DirectionsCarIcon sx={{ fontSize: 20 }} />
                 </Box>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>Phương tiện</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{t('vehicles_list')}</Typography>
               </Box>
               <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mt: 1 }}>
                 {vehicles.length}
               </Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                Tổng {totalCapacity} chỗ
+                {t('tour_total_seats', { count: totalCapacity })}
               </Typography>
             </CardContent>
           </Card>
@@ -159,7 +162,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
           <Card elevation={0} sx={statCardSx}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'center' }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Tình trạng xếp xe</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{t('tour_seating_status')}</Typography>
                 <Typography
                   variant="subtitle2"
                   sx={{
@@ -171,7 +174,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
                     borderRadius: 2,
                   }}
                 >
-                  {totalAssigned} / {totalCapacity} chỗ
+                  {t('tour_seating_count', { assigned: totalAssigned, total: totalCapacity })}
                 </Typography>
               </Box>
               <LinearProgress
@@ -189,13 +192,13 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
               />
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1.5 }}>
                 <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                  Đã xếp {Math.round(occupancyRate)}%
+                  {t('tour_seating_rate', { rate: Math.round(occupancyRate) })}
                 </Typography>
                 <Typography
                   variant="caption"
                   sx={{ color: unassigned > 0 ? 'error.main' : 'success.main', fontWeight: 600 }}
                 >
-                  {unassigned > 0 ? `${unassigned} người chưa xếp` : '✓ Đã xếp xong!'}
+                  {unassigned > 0 ? t('tour_seating_unassigned_count', { count: unassigned }) : t('tour_seating_completed')}
                 </Typography>
               </Box>
             </CardContent>

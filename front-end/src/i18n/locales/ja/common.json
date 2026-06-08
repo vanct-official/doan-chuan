@@ -101,6 +101,7 @@
   "col_phone": "電話番号",
   "col_gender": "性別",
   "col_dob": "生年月日",
+  "col_birth_year": "誕生年",
   "col_role": "役割",
   "col_action": "操作",
   "col_status": "ステータス",

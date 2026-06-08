@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslate } from '../../hooks/useTranslate';
+import { ContactFloatButton } from '../../components/ContactFloatButton';
 import {
   Box, Typography, Button, Paper, Stack, Chip, Divider,
   TextField, MenuItem, Select, FormControl, InputLabel,
@@ -735,6 +736,7 @@ export default function JoinTourPage() {
           </Paper>
         )}
       </Box>
+      <ContactFloatButton />
     </Box>
   );
 }

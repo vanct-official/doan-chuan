@@ -77,7 +77,7 @@ i18n
     nonExplicitSupportedLngs: true,
     defaultNS: 'common',
     ns: ['common'],
-    fallbackNS: ['common'],
+    fallbackNS: ['common', 'tour', 'auth'],
     partialBundledLanguages: true,
     interpolation: {
       escapeValue: false,

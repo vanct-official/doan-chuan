@@ -6,7 +6,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useTranslation } from 'react-i18next';
+import { useTranslate } from '../../../hooks/useTranslate';
 
 // This acts as a vertical timeline list
 export default function ScheduleTab({ 
@@ -17,14 +17,15 @@ export default function ScheduleTab({
   tourAttendances,
   totalMembers
 }) {
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslate(['common', 'tour']);
+  const localeCode = currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
   const theme = useTheme();
 
   return (
     <Box sx={{ p: 2, pb: 10, height: '100%', overflowY: 'auto' }}>
       {itineraries.length === 0 ? (
         <Typography textAlign="center" color="text.secondary" sx={{ mt: 4 }}>
-          Chưa có lịch trình nào.
+          {t('tour_empty_schedule')}
         </Typography>
       ) : (
         <Box sx={{ position: 'relative' }}>
@@ -83,7 +84,7 @@ export default function ScheduleTab({
                       <Box sx={{ display: 'flex', alignItems: 'center', color: 'text.secondary', mb: 0.5 }}>
                         <AccessTimeIcon sx={{ fontSize: 16, mr: 1 }} />
                         <Typography variant="body2">
-                          {new Date(itinerary.date).toLocaleString('vi-VN', { 
+                          {new Date(itinerary.date).toLocaleString(localeCode, { 
                             hour: '2-digit', minute: '2-digit',
                             day: '2-digit', month: '2-digit'
                           })}
@@ -101,7 +102,7 @@ export default function ScheduleTab({
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Chip 
                           icon={<CheckCircleIcon style={{ fontSize: 14 }} />} 
-                          label={`Đã điểm danh: ${presentCount}/${totalMembers}`} 
+                          label={t('tour_attendance_checked', { present: presentCount, total: totalMembers })} 
                           size="small" 
                           color={presentCount === totalMembers && totalMembers > 0 ? "success" : "default"}
                           sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}

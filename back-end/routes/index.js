@@ -12,6 +12,7 @@ const authController = require('../controllers/authController');
 const groupController = require('../controllers/groupController');
 const itineraryController = require('../controllers/itineraryController');
 const attendanceController = require('../controllers/attendanceController');
+const settingController = require('../controllers/settingController');
 
 /**
  * @swagger
@@ -505,5 +506,11 @@ router.delete('/itineraries/:id', authMiddleware, itineraryController.deleteItin
 router.get('/attendance', authMiddleware, attendanceController.getAttendanceByItineraryAndVehicle);
 router.get('/attendance/tour/:tourId', authMiddleware, attendanceController.getAttendanceByTour);
 router.post('/attendance/batch', authMiddleware, attendanceController.markAttendanceBatch);
+
+// ----------------------------------------------------------------------
+// Setting routes
+// ----------------------------------------------------------------------
+router.get('/settings/:key', settingController.getSetting);
+router.put('/settings/:key', authMiddleware, settingController.updateSetting);
 
 module.exports = router;

@@ -10,6 +10,7 @@ import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutlined';
 import PhoneIcon from '@mui/icons-material/Phone';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import { stringAvatar } from '../../../utils/avatarUtils';
+import { useTranslate } from '../../../hooks/useTranslate';
 
 const ViewVehiclePassengersModal = ({
   open,
@@ -35,6 +36,7 @@ const ViewVehiclePassengersModal = ({
   handleRemoveMemberFromVehicle,
   renderLicensePlate
 }) => {
+  const { t } = useTranslate(['common', 'tour']);
 
   return (
     <Dialog
@@ -153,6 +155,8 @@ const ViewVehiclePassengersModal = ({
                     const mId = member._id;
                     const mName = member.user_id?.name || member.guest_info?.name;
                     const isChecked = selectedUnassignedIds.includes(mId);
+                    const birthYear = member.guest_info?.birth_year || (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : null);
+                    const age = birthYear ? new Date().getFullYear() - birthYear : null;
 
                     // Get group name if any
                     const passGroupId = member.group_id?._id || member.group_id;
@@ -188,6 +192,11 @@ const ViewVehiclePassengersModal = ({
                           <Box sx={{ overflow: 'hidden', flex: 1, minWidth: 0 }}>
                             <Typography variant="body2" sx={{ fontWeight: isChecked ? 'bold' : 'medium', fontSize: '0.85rem', color: isChecked ? 'success.dark' : 'text.primary' }} noWrap>
                               {mName} <Typography component="span" variant="caption" color="text.secondary">({member.role})</Typography>
+                              {birthYear && (
+                                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                  · {age ? t('tour_birth_year_with_age', { year: birthYear, age }) : t('tour_birth_year_only', { year: birthYear })}
+                                </Typography>
+                              )}
                             </Typography>
                             {grp && (
                               <Typography variant="caption" sx={{ display: 'block', fontSize: '0.65rem', lineHeight: 1.2, color: 'text.secondary' }} noWrap>
@@ -292,6 +301,7 @@ const ViewVehiclePassengersModal = ({
                     const name = isGuest ? member.guest_info?.name : member.user_id?.name;
                     const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
                     const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
+                    const age = birthYear && birthYear !== '-' ? new Date().getFullYear() - Number(birthYear) : null;
                     const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'male' : member.user_id?.gender === false ? 'female' : '');
                     const genderLabel = genderRaw === 'male' ? 'Nam' : genderRaw === 'female' ? 'Nữ' : 'Khác';
                     const isRepresentative = activeVehicleForPassengers.representative_id === member._id;
@@ -326,7 +336,7 @@ const ViewVehiclePassengersModal = ({
                               </Typography>
                               
                               <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <PersonAddIcon fontSize="small" sx={{ opacity: 0.7 }} /> {genderLabel} • Sinh năm: {birthYear}
+                                <PersonAddIcon fontSize="small" sx={{ opacity: 0.7 }} /> {genderLabel} • {birthYear && birthYear !== '-' ? (age ? t('tour_birth_year_with_age', { year: birthYear, age }) : t('tour_birth_year_only', { year: birthYear })) : '-'}
                               </Typography>
                             </Box>
 
@@ -374,11 +384,11 @@ const ViewVehiclePassengersModal = ({
                 <Table size="small">
                   <TableHead sx={{ bgcolor: 'grey.50' }}>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Họ tên</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Số điện thoại</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Giới tính</TableCell>
-                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Năm sinh</TableCell>
-                      {canEditItinerary && <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }} align="center">Thao tác</TableCell>}
+                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('col_name')}</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('col_phone')}</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('col_gender')}</TableCell>
+                      <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>{t('col_birth_year')}</TableCell>
+                      {canEditItinerary && <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }} align="center">{t('col_action')}</TableCell>}
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -386,7 +396,7 @@ const ViewVehiclePassengersModal = ({
                       <TableRow>
                         <TableCell colSpan={canEditItinerary ? 5 : 4} align="center" sx={{ py: 3 }}>
                           <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                            Chưa có hành khách nào được xếp lên xe này.
+                            {t('tour_vehicle_empty_occupants')}
                           </Typography>
                         </TableCell>
                       </TableRow>
@@ -396,6 +406,7 @@ const ViewVehiclePassengersModal = ({
                         const name = isGuest ? member.guest_info?.name : member.user_id?.name;
                         const phone = isGuest ? member.guest_info?.phone : member.user_id?.phone;
                         const birthYear = isGuest ? member.guest_info?.birth_year : (member.user_id?.dob ? new Date(member.user_id.dob).getFullYear() : '-');
+                        const age = birthYear && birthYear !== '-' ? new Date().getFullYear() - Number(birthYear) : null;
                         const genderRaw = isGuest ? member.guest_info?.gender : (member.user_id?.gender === true ? 'male' : member.user_id?.gender === false ? 'female' : '');
                         const genderLabel = genderRaw === 'male' ? 'Nam' : genderRaw === 'female' ? 'Nữ' : 'Khác';
 
@@ -426,7 +437,7 @@ const ViewVehiclePassengersModal = ({
                             </TableCell>
                             <TableCell>{phone || 'Chưa cung cấp SĐT'}</TableCell>
                             <TableCell>{genderLabel}</TableCell>
-                            <TableCell>{birthYear}</TableCell>
+                            <TableCell>{birthYear && birthYear !== '-' ? (age ? t('tour_birth_year_with_age', { year: birthYear, age }) : t('tour_birth_year_only', { year: birthYear })) : '-'}</TableCell>
                             {canEditItinerary && (
                               <TableCell align="center">
                                 <Stack direction="row" spacing={1} justifyContent="center">

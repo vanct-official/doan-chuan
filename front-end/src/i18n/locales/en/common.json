@@ -101,6 +101,7 @@
   "col_phone": "Phone Number",
   "col_gender": "Gender",
   "col_dob": "Date of Birth",
+  "col_birth_year": "Birth Year",
   "col_role": "Role",
   "col_action": "Actions",
   "col_status": "Status",

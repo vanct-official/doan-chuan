@@ -5,11 +5,11 @@ import {
   Switch, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, TextField, Snackbar
 } from '@mui/material';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
-import { useTranslation } from 'react-i18next';
+import { useTranslate } from '../../hooks/useTranslate';
 import { authService } from '../../services/authService';
 
 export const AdminUsersPage = () => {
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslate(['common', 'tour']);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,7 +24,7 @@ export const AdminUsersPage = () => {
       setUsers(response.users || []);
       setError(null);
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Lỗi khi tải dữ liệu người dùng');
+      setError(err.response?.data?.message || err.message || t('admin_users_load_error'));
     } finally {
       setLoading(false);
     }
@@ -120,7 +120,13 @@ export const AdminUsersPage = () => {
                       )}
                     </TableCell>
                     <TableCell>
-                      {u.dob ? new Date(u.dob).toLocaleDateString('vi-VN') : 'N/A'}
+                      {u.dob ? (() => {
+                        const date = new Date(u.dob);
+                        const year = date.getFullYear();
+                        const age = new Date().getFullYear() - year;
+                        const formattedDate = date.toLocaleDateString(currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US');
+                        return `${formattedDate} (${t('tour_years_old', { count: age })})`;
+                      })() : 'N/A'}
                     </TableCell>
                     <TableCell align="center">
                       <Chip
@@ -190,8 +196,17 @@ export const AdminUsersPage = () => {
                 <Typography variant="body2" color="text.secondary" mb={0.5}>
                   <strong>{t('col_email')}:</strong> {u.email}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" mb={1.5}>
+                <Typography variant="body2" color="text.secondary" mb={0.5}>
                   <strong>{t('col_phone')}:</strong> {u.phone || t('profile_unspecified')}
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={1.5}>
+                  <strong>{t('col_dob')}:</strong> {u.dob ? (() => {
+                    const date = new Date(u.dob);
+                    const year = date.getFullYear();
+                    const age = new Date().getFullYear() - year;
+                    const formattedDate = date.toLocaleDateString(currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US');
+                    return `${formattedDate} (${t('tour_years_old', { count: age })})`;
+                  })() : t('profile_unspecified')}
                 </Typography>
                 <Box display="flex" gap={1}>
                   <Chip
