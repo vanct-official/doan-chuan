@@ -1246,7 +1246,7 @@ export default function TourDetailPage() {
       
       {/* 1. COMPACT HEADER */}
       <Box sx={{ 
-        bgcolor: 'primary.main', color: 'white', pt: 2, pb: 2, px: 2, 
+        bgcolor: 'primary.main', color: 'white', pt: 'calc(env(safe-area-inset-top) + 16px)', pb: 2, px: 2, 
         boxShadow: '0 4px 10px rgba(0,0,0,0.1)', zIndex: 10
       }}>
         <Stack direction="row" alignItems="center" spacing={1}>
@@ -1275,7 +1275,7 @@ export default function TourDetailPage() {
       )}
 
       {/* 2. MAIN SCROLLABLE CONTENT (TABS) */}
-      <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative', pb: 10 }}>
+      <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative', pb: 'calc(80px + env(safe-area-inset-bottom))' }}>
         {bottomNavValue === 0 && (
           <OverviewTab 
             tour={tour} 
@@ -1368,7 +1368,7 @@ export default function TourDetailPage() {
 
       {/* 3. DYNAMIC FAB (FLOATING ACTION BUTTON) */}
       {canEditItinerary && (
-        <Box sx={{ position: 'fixed', bottom: 80, right: 16, zIndex: 1000 }}>
+        <Box sx={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom))', right: 16, zIndex: 1000 }}>
           {bottomNavValue === 1 && (
             <SpeedDial
               ariaLabel="People Actions"
@@ -1413,7 +1413,7 @@ export default function TourDetailPage() {
       )}
 
       {/* 4. BOTTOM NAVIGATION */}
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, bgcolor: 'background.paper' }} elevation={8}>
+      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, bgcolor: 'background.paper', pb: 'env(safe-area-inset-bottom)' }} elevation={8}>
         <BottomNavigation
           showLabels
           value={bottomNavValue}

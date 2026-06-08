@@ -47,7 +47,7 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   ];
 
   const drawerContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', pt: 'env(safe-area-inset-top)' }}>
       <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}>
         <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.5px', color: 'primary.main' }}>
           ADMIN PORTAL
@@ -105,7 +105,7 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
       </Box>
 
       <Divider />
-      <Box sx={{ p: 1 }}>
+      <Box sx={{ p: 1, pb: 'calc(8px + env(safe-area-inset-bottom))' }}>
         <List>
           <ListItem disablePadding>
             <ListItemButton

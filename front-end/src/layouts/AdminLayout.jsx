@@ -43,6 +43,7 @@ export const AdminLayout = ({ children }) => {
             boxShadow: 'none',
             borderBottom: '1px solid',
             borderColor: 'divider',
+            pt: 'env(safe-area-inset-top)',
           }}
         >
           <Toolbar>
@@ -77,7 +78,9 @@ export const AdminLayout = ({ children }) => {
             minHeight: '100vh',
           }}
         >
-          <Toolbar />
+          <Box sx={{ pt: 'env(safe-area-inset-top)' }}>
+            <Toolbar />
+          </Box>
           <Box sx={{ flexGrow: 1, width: '100%' }}>
             {children}
           </Box>

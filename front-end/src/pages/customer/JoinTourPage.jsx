@@ -152,6 +152,8 @@ export default function JoinTourPage() {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+          pt: 'env(safe-area-inset-top)',
+          pb: 'env(safe-area-inset-bottom)',
         }}
       >
         <Stack alignItems="center" spacing={2}>
@@ -172,7 +174,9 @@ export default function JoinTourPage() {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-          p: 3,
+          px: 3,
+          pt: 'calc(24px + env(safe-area-inset-top))',
+          pb: 'calc(24px + env(safe-area-inset-bottom))',
         }}
       >
         <Paper sx={{ p: 5, borderRadius: 4, maxWidth: 460, textAlign: 'center' }}>
@@ -203,7 +207,9 @@ export default function JoinTourPage() {
           alignItems: 'center',
           justifyContent: 'center',
           background: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-          p: 3,
+          px: 3,
+          pt: 'calc(24px + env(safe-area-inset-top))',
+          pb: 'calc(24px + env(safe-area-inset-bottom))',
         }}
       >
         <Paper sx={{ p: 5, borderRadius: 4, maxWidth: 480, textAlign: 'center' }}>
@@ -233,7 +239,9 @@ export default function JoinTourPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          p: 3,
+          px: 3,
+          pt: 'calc(24px + env(safe-area-inset-top))',
+          pb: 'calc(24px + env(safe-area-inset-bottom))',
         }}
       >
         <Paper
@@ -324,7 +332,9 @@ export default function JoinTourPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          p: 3,
+          px: 3,
+          pt: 'calc(24px + env(safe-area-inset-top))',
+          pb: 'calc(24px + env(safe-area-inset-bottom))',
         }}
       >
         <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 4, maxWidth: 500, width: '100%', textAlign: 'center' }} elevation={12}>
@@ -365,7 +375,8 @@ export default function JoinTourPage() {
       sx={{
         minHeight: '100vh',
         background: 'linear-gradient(160deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
-        py: { xs: 3, md: 6 },
+        pt: { xs: 'calc(env(safe-area-inset-top) + 24px)', md: 'calc(env(safe-area-inset-top) + 48px)' },
+        pb: { xs: 'calc(env(safe-area-inset-bottom) + 24px)', md: 'calc(env(safe-area-inset-bottom) + 48px)' },
         px: { xs: 2, md: 3 },
       }}
     >

@@ -69,7 +69,7 @@ export const Header = ({ onMenuClick }) => {
   };
 
   const drawer = (
-    <Box onClick={() => setMobileOpen(false)} sx={{ textAlign: 'center', width: 250 }}>
+    <Box onClick={() => setMobileOpen(false)} sx={{ textAlign: 'center', width: 250, pt: 'env(safe-area-inset-top)' }}>
       <Typography variant="h6" sx={{ my: 2, fontWeight: 'bold' }}>
         {t('common.app.title')}
       </Typography>
@@ -133,7 +133,7 @@ export const Header = ({ onMenuClick }) => {
   );
 
   return (
-    <AppBar position="sticky">
+    <AppBar position="sticky" sx={{ pt: 'env(safe-area-inset-top)' }}>
       <Toolbar>
         <IconButton
           edge="start"

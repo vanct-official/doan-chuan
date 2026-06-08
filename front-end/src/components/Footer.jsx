@@ -10,7 +10,7 @@ export const Footer = () => {
   const { mode } = useColorMode();
 
   return (
-    <Box component="footer" sx={{ p: 2.5, bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', mt: 'auto' }}>
+    <Box component="footer" sx={{ p: 2.5, pb: 'calc(20px + env(safe-area-inset-bottom))', bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider', mt: 'auto' }}>
       <Box sx={{
         display: 'flex',
         flexDirection: { xs: 'column', sm: 'row' },

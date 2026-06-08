@@ -1,0 +1,31 @@
+/* Custom variables for iOS PWA Safe Area support */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+}
+
+/* Ensure html and body utilize full height and cover safe areas properly */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: contain; /* Prevents viewport bounce/pull-to-refresh issues on iOS */
+}
+
+/* Helper utility classes for safe-areas if needed */
+.safe-padding-top {
+  padding-top: var(--safe-area-inset-top);
+}
+.safe-padding-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+.safe-margin-top {
+  margin-top: var(--safe-area-inset-top);
+}
+.safe-margin-bottom {
+  margin-bottom: var(--safe-area-inset-bottom);
+}

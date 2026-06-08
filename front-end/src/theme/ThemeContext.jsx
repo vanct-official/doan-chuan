@@ -11,6 +11,13 @@ export const AppThemeProvider = ({ children }) => {
     return localStorage.getItem('theme_mode') || 'light';
   });
 
+  React.useEffect(() => {
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute('content', mode === 'light' ? '#f8fafc' : '#0f172a');
+    }
+  }, [mode]);
+
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
