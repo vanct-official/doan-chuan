@@ -44,18 +44,18 @@ export const AdminUsersPage = () => {
 
   const handleStatusSubmit = async () => {
     if (!statusModal.password) {
-      setToast({ open: true, message: 'Vui lòng nhập mật khẩu xác nhận!', severity: 'error' });
+      setToast({ open: true, message: t('admin_status_password_required'), severity: 'error' });
       return;
     }
     
     setStatusModal(prev => ({ ...prev, loading: true }));
     try {
       const response = await authService.toggleUserStatus(statusModal.user._id, statusModal.password);
-      setToast({ open: true, message: response.message || 'Thay đổi trạng thái thành công!', severity: 'success' });
+      setToast({ open: true, message: response.message || t('admin_status_success'), severity: 'success' });
       fetchUsers();
       handleCloseStatusModal();
     } catch (err) {
-      setToast({ open: true, message: err.response?.data?.message || err.message || 'Lỗi khi thay đổi trạng thái', severity: 'error' });
+      setToast({ open: true, message: err.response?.data?.message || err.message || t('admin_status_error'), severity: 'error' });
       setStatusModal(prev => ({ ...prev, loading: false }));
     }
   };
@@ -83,7 +83,7 @@ export const AdminUsersPage = () => {
                 <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('col_gender')}</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }}>{t('col_dob')}</TableCell>
                 <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('col_role')}</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }} align="center">Trạng thái</TableCell>
+                <TableCell sx={{ fontWeight: 'bold' }} align="center">{t('col_status')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -138,7 +138,7 @@ export const AdminUsersPage = () => {
                         />
                       ) : (
                         <Chip 
-                          label={u.isActive !== false ? 'Hoạt động' : 'Vô hiệu hóa'} 
+                          label={u.isActive !== false ? t('common.status.active') : t('common.status.inactive')} 
                           color={u.isActive !== false ? 'success' : 'error'} 
                           size="small" 
                           variant="outlined" 
@@ -180,7 +180,7 @@ export const AdminUsersPage = () => {
                     />
                   ) : (
                     <Chip 
-                      label={u.isActive !== false ? 'Hoạt động' : 'Vô hiệu hóa'} 
+                      label={u.isActive !== false ? t('common.status.active') : t('common.status.inactive')} 
                       color={u.isActive !== false ? 'success' : 'error'} 
                       size="small" 
                       variant="outlined" 
@@ -216,14 +216,17 @@ export const AdminUsersPage = () => {
 
       {/* Modals & Notifications */}
       <Dialog open={statusModal.open} onClose={handleCloseStatusModal}>
-        <DialogTitle>Xác nhận thay đổi trạng thái</DialogTitle>
+        <DialogTitle>{t('admin_status_confirm_title')}</DialogTitle>
         <DialogContent>
           <DialogContentText mb={2}>
-            Vui lòng nhập mật khẩu của bạn để xác nhận {statusModal.user?.isActive !== false ? 'vô hiệu hóa' : 'kích hoạt'} tài khoản <strong>{statusModal.user?.name}</strong>.
+            {t('admin_status_confirm_desc', { 
+              action: statusModal.user?.isActive !== false ? t('admin_status_disable') : t('admin_status_activate'), 
+              name: statusModal.user?.name 
+            })}
           </DialogContentText>
           <TextField
             autoFocus
-            label="Mật khẩu của bạn"
+            label={t('admin_status_password')}
             type="password"
             fullWidth
             variant="outlined"
@@ -233,9 +236,9 @@ export const AdminUsersPage = () => {
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseStatusModal} disabled={statusModal.loading} color="inherit">Hủy</Button>
+          <Button onClick={handleCloseStatusModal} disabled={statusModal.loading} color="inherit">{t('cancel')}</Button>
           <Button onClick={handleStatusSubmit} variant="contained" color="primary" disabled={statusModal.loading}>
-            {statusModal.loading ? <CircularProgress size={24} /> : 'Xác nhận'}
+            {statusModal.loading ? <CircularProgress size={24} /> : t('common.actions.confirm')}
           </Button>
         </DialogActions>
       </Dialog>

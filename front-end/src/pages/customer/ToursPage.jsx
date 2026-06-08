@@ -20,7 +20,7 @@ const gradients = [
   'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
   'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
 ];
-import { useTranslation } from 'react-i18next';
+import { useTranslate } from '../../hooks/useTranslate';
 import { useNavigate } from 'react-router-dom';
 import { tourService } from '../../services/tourService';
 import { offlineApi } from '../../services/offlineApi';
@@ -30,12 +30,13 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 
 export const ToursPage = () => {
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslate(['common', 'tour']);
   const navigate = useNavigate();
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
+  const localeCode = currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
 
   // States for Create Tour Modal (for customers)
   const [openModal, setOpenModal] = useState(false);
@@ -67,7 +68,7 @@ export const ToursPage = () => {
       setTours(response.data || []);
       setError(null);
     } catch (err) {
-      setError(err.message || 'Lỗi khi tải dữ liệu tour');
+      setError(err.message || t('common.messages.error'));
     } finally {
       setLoading(false);
     }
@@ -105,7 +106,7 @@ export const ToursPage = () => {
     const userId = user ? user.id : null;
 
     if (!userId) {
-      setSubmitError('Phiên đăng nhập đã hết hạn! Vui lòng đăng nhập lại.');
+      setSubmitError(t('session_expired'));
       setSubmitting(false);
       return;
     }
@@ -126,7 +127,7 @@ export const ToursPage = () => {
         handleCloseModal();
       }, 1500);
     } catch (err) {
-      setSubmitError(err.response?.data?.message || err.response?.data?.error || err.message || 'Lỗi khi tạo tour');
+      setSubmitError(err.response?.data?.message || err.response?.data?.error || err.message || t('tour_create_error'));
     } finally {
       setSubmitting(false);
     }
@@ -137,10 +138,10 @@ export const ToursPage = () => {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
         <Box>
           <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-0.5px' }}>
-            {t('menu_tours') || 'Chuyến Đi Của Bạn'}
+            {t('menu_tours')}
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
-            Quản lý và theo dõi các tour du lịch bạn tham gia
+            {t('tours_subtitle')}
           </Typography>
         </Box>
         {user && (
@@ -151,14 +152,14 @@ export const ToursPage = () => {
             onClick={handleOpenModal}
             sx={{ py: 1.2, px: 3, borderRadius: 8, fontWeight: 'bold', boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)', display: { xs: 'none', sm: 'flex' } }}
           >
-            {t('admin_tours_add') || 'Tạo Tour Mới'}
+            {t('admin_tours_add')}
           </Button>
         )}
       </Box>
 
       {isOfflineData && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Danh sách tour từ cache — kết nối mạng để cập nhật mới nhất
+          {t('tours_offline_alert')}
         </Alert>
       )}
 
@@ -171,7 +172,7 @@ export const ToursPage = () => {
           fullWidth
           sx={{ py: 1.5, mb: 4, borderRadius: 3, fontWeight: 'bold', display: { xs: 'flex', sm: 'none' } }}
         >
-          {t('admin_tours_add') || 'Tạo Tour Mới'}
+          {t('admin_tours_add')}
         </Button>
       )}
 
@@ -197,10 +198,10 @@ export const ToursPage = () => {
           {user ? (
             <>
               <Typography variant="h5" fontWeight="bold" mb={2} color="text.primary">
-                Chuyến đi của bạn đang trống!
+                {t('tours_empty_title')}
               </Typography>
               <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', mb: 4 }}>
-                Số điện thoại <strong>{user.phone || '(chưa cập nhật)'}</strong> chưa được thêm vào bất kỳ tour nào. Hãy liên hệ với người tổ chức để được thêm vào, hoặc tự tạo một chuyến đi mới.
+                {t('tours_empty_desc', { phone: user.phone || t('profile_unspecified') })}
               </Typography>
               <Button 
                 variant="contained" 
@@ -210,7 +211,7 @@ export const ToursPage = () => {
                 onClick={handleOpenModal}
                 sx={{ borderRadius: 8, px: 4, py: 1.5, fontWeight: 'bold', boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)' }}
               >
-                Tạo Tour Mới Ngay
+                {t('admin_tours_add')}
               </Button>
             </>
           ) : (
@@ -252,7 +253,7 @@ export const ToursPage = () => {
                 }}
               >
                 <Chip 
-                  label={tour.status === 'confirmed' ? 'Đã chốt' : tour.status === 'draft' ? 'Bản nháp' : tour.status} 
+                  label={tour.status === 'confirmed' ? t('status_confirmed') : tour.status === 'draft' ? t('status_draft') : tour.status} 
                   color={tour.status === 'confirmed' ? 'success' : tour.status === 'draft' ? 'warning' : 'default'} 
                   size="small" 
                   sx={{ 
@@ -274,18 +275,18 @@ export const ToursPage = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, color: 'text.secondary' }}>
                     <EventIcon fontSize="small" sx={{ mr: 1.5, opacity: 0.7 }} />
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {new Date(tour.start_time).toLocaleDateString('vi-VN')}
+                      {new Date(tour.start_time).toLocaleDateString(localeCode)}
                     </Typography>
                     <ArrowRightAltIcon fontSize="small" sx={{ mx: 1, opacity: 0.5 }} />
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {new Date(tour.end_time).toLocaleDateString('vi-VN')}
+                      {new Date(tour.end_time).toLocaleDateString(localeCode)}
                     </Typography>
                   </Box>
 
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, color: 'text.secondary' }}>
                     <GroupIcon fontSize="small" sx={{ mr: 1.5, opacity: 0.7 }} />
                     <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      Tối đa {tour.max_capacity} hành khách
+                      {t('tour_capacity_max', { count: tour.max_capacity })}
                     </Typography>
                   </Box>
                 </Box>
@@ -305,7 +306,7 @@ export const ToursPage = () => {
                     '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
                   }}
                 >
-                  Xem chi tiết
+                  {t('view_detail')}
                 </Button>
               </CardContent>
             </Card>

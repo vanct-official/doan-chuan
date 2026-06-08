@@ -97,7 +97,7 @@ const ProfilePage = () => {
       }
     } catch (err) {
       console.error(err);
-      setError('Không thể tải thông tin cá nhân. Vui lòng đăng nhập lại!');
+      setError(t('profile_load_error'));
       authService.logout();
       setTimeout(() => navigate('/login'), 3000);
     } finally {
@@ -140,7 +140,7 @@ const ProfilePage = () => {
         role: data.user.role
       }));
 
-      setInfoSuccess('Cập nhật thông tin cá nhân thành công!');
+      setInfoSuccess(t('profile_update_success'));
       setIsEditingInfo(false);
 
       // Auto refresh header display (since Header relies on localStorage)
@@ -149,7 +149,7 @@ const ProfilePage = () => {
       }, 100);
 
     } catch (err) {
-      setInfoError(err.response?.data?.message || 'Lỗi khi cập nhật thông tin cá nhân.');
+      setInfoError(err.response?.data?.message || t('profile_update_error'));
     } finally {
       setInfoLoading(false);
     }
@@ -163,7 +163,7 @@ const ProfilePage = () => {
     setPassSuccess('');
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPassError('Xác nhận mật khẩu mới không khớp!');
+      setPassError(t('password_confirm_mismatch'));
       setPassLoading(false);
       return;
     }
@@ -174,14 +174,14 @@ const ProfilePage = () => {
         newPassword: passwordForm.newPassword
       });
 
-      setPassSuccess(data.message || 'Thay đổi mật khẩu thành công!');
+      setPassSuccess(data.message || t('password_change_success'));
       setPasswordForm({ oldPassword: '', newPassword: '', confirmPassword: '' });
 
       // Refresh user profile to update hasPassword state
       const updatedProfile = await authService.getProfile();
       setProfile(updatedProfile.user);
     } catch (err) {
-      setPassError(err.response?.data?.message || 'Có lỗi xảy ra khi thay đổi mật khẩu.');
+      setPassError(err.response?.data?.message || t('password_change_error'));
     } finally {
       setPassLoading(false);
     }
@@ -194,17 +194,17 @@ const ProfilePage = () => {
     setModalError('');
 
     if (!modalForm.name.trim()) {
-      setModalError('Họ tên không được để trống!');
+      setModalError(t('name_required'));
       setModalLoading(false);
       return;
     }
     if (!modalForm.phone.trim()) {
-      setModalError('Số điện thoại không được để trống!');
+      setModalError(t('phone_required'));
       setModalLoading(false);
       return;
     }
     if (!modalForm.dob) {
-      setModalError('Ngày sinh không được để trống!');
+      setModalError(t('dob_required'));
       setModalLoading(false);
       return;
     }
@@ -235,7 +235,7 @@ const ProfilePage = () => {
         gender: data.user.gender !== undefined ? String(data.user.gender) : 'true'
       });
 
-      alert('Hoàn tất hồ sơ thành công! Chào mừng bạn tham gia hệ thống.');
+      alert(t('modal_complete_success'));
 
       // Close modal and remove query param
       setModalOpen(false);
@@ -245,7 +245,7 @@ const ProfilePage = () => {
       window.dispatchEvent(new Event('storage'));
       navigate('/'); // Go back to Home page
     } catch (err) {
-      setModalError(err.response?.data?.message || 'Lỗi khi cập nhật thông tin bắt buộc.');
+      setModalError(err.response?.data?.message || t('modal_complete_error'));
     } finally {
       setModalLoading(false);
     }
@@ -264,9 +264,11 @@ const ProfilePage = () => {
       {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
 
       {/* Main Profile Card (Avatar + Info) */}
-      <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: '#e2e8f0', mb: 4, overflow: 'hidden', bgcolor: '#ffffff' }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', mb: 4, overflow: 'hidden', bgcolor: 'background.paper' }}>
         <Box sx={{
-          background: 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)',
+          background: (theme) => theme.palette.mode === 'light'
+            ? 'linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%)'
+            : 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
           height: 140,
           width: '100%'
         }} />
@@ -275,14 +277,14 @@ const ProfilePage = () => {
           <Grid item xs={12} md={4} sx={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             mt: -7, px: 3, pb: 4,
-            borderRight: { md: '1px solid #f1f5f9' },
+            borderRight: { md: (theme) => `1px solid ${theme.palette.divider}` },
           }}>
             <Avatar
               sx={{
                 width: 120,
                 height: 120,
-                border: '4px solid white',
-                bgcolor: '#1976d2',
+                border: (theme) => `4px solid ${theme.palette.background.paper}`,
+                bgcolor: 'primary.main',
                 fontSize: '3rem',
                 fontWeight: 'bold',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.06)'
@@ -296,8 +298,10 @@ const ProfilePage = () => {
               alignItems: 'center',
               px: 2,
               py: 0.5,
-              bgcolor: profile?.role === 'admin' ? '#fee2e2' : '#eff6ff',
-              color: profile?.role === 'admin' ? '#b91c1c' : '#1d4ed8',
+              bgcolor: (theme) => theme.palette.mode === 'light'
+                ? (profile?.role === 'admin' ? '#fee2e2' : '#eff6ff')
+                : (profile?.role === 'admin' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)'),
+              color: profile?.role === 'admin' ? 'error.main' : 'primary.main',
               borderRadius: 2,
               fontSize: '0.8rem',
               fontWeight: 600,
@@ -313,7 +317,7 @@ const ProfilePage = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Person color="primary" sx={{ mr: 1.5, fontSize: 32 }} />
                   <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                    Thông tin cá nhân
+                    {t('profile_personal_info')}
                   </Typography>
                 </Box>
                 {!isEditingInfo ? (
@@ -323,7 +327,7 @@ const ProfilePage = () => {
                     onClick={() => setIsEditingInfo(true)}
                     sx={{ borderRadius: 2 }}
                   >
-                    Chỉnh sửa
+                    {t('profile_edit')}
                   </Button>
                 ) : (
                   <Button
@@ -335,7 +339,7 @@ const ProfilePage = () => {
                       setInfoSuccess('');
                     }}
                   >
-                    Hủy
+                    {t('profile_cancel')}
                   </Button>
                 )}
               </Box>
@@ -351,25 +355,25 @@ const ProfilePage = () => {
                   {[
                     { icon: <Badge />, label: t('profile_name'), value: profile?.name },
                     { icon: <Email />, label: t('profile_email'), value: profile?.email },
-                    { icon: <Phone />, label: t('profile_phone'), value: profile?.phone || <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>Chưa cập nhật</span> },
-                    { icon: <CalendarMonth />, label: t('profile_dob'), value: profile?.dob ? new Date(profile.dob).toLocaleDateString('vi-VN') : <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>Chưa cập nhật</span> },
-                    { icon: <Wc />, label: t('profile_gender'), value: profile?.gender === undefined ? <span style={{ color: '#cbd5e1', fontStyle: 'italic' }}>Chưa cập nhật</span> : (profile.gender ? t('profile_male') : t('profile_female')) }
+                    { icon: <Phone />, label: t('profile_phone'), value: profile?.phone || <Box component="span" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>{t('profile_not_updated')}</Box> },
+                    { icon: <CalendarMonth />, label: t('profile_dob'), value: profile?.dob ? new Date(profile.dob).toLocaleDateString('vi-VN') : <Box component="span" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>{t('profile_not_updated')}</Box> },
+                    { icon: <Wc />, label: t('profile_gender'), value: profile?.gender === undefined ? <Box component="span" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>{t('profile_not_updated')}</Box> : (profile.gender ? t('profile_male') : t('profile_female')) }
                   ].map((item, idx, arr) => (
                     <React.Fragment key={idx}>
                       <Box sx={{ display: 'flex', py: 2.5, alignItems: 'center' }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', width: { xs: 140, sm: 200 }, flexShrink: 0 }}>
-                          {React.cloneElement(item.icon, { sx: { fontSize: 20, mr: 1.5, color: '#94a3b8' } })}
-                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#64748b' }}>
+                          {React.cloneElement(item.icon, { sx: { fontSize: 20, mr: 1.5, color: 'text.secondary' } })}
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
                             {item.label}
                           </Typography>
                         </Box>
                         <Box sx={{ flexGrow: 1 }}>
-                          <Typography variant="body1" sx={{ color: '#334155', fontWeight: 500 }}>
+                          <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500 }}>
                             {item.value}
                           </Typography>
                         </Box>
                       </Box>
-                      {idx < arr.length - 1 && <Divider sx={{ borderColor: '#f8fafc' }} />}
+                      {idx < arr.length - 1 && <Divider />}
                     </React.Fragment>
                   ))}
                 </Box>
@@ -427,7 +431,7 @@ const ProfilePage = () => {
                         startIcon={infoLoading ? <CircularProgress size={20} color="inherit" /> : <Save />}
                         sx={{ px: 4, py: 1.5, borderRadius: 2, fontWeight: 'bold' }}
                       >
-                        Lưu thay đổi
+                        {t('profile_save_changes')}
                       </Button>
                     </Grid>
                   </Grid>
@@ -439,7 +443,7 @@ const ProfilePage = () => {
       </Card>
 
       {/* Security / Password Card */}
-      <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: '#e2e8f0', bgcolor: '#ffffff' }}>
+      <Card elevation={0} sx={{ borderRadius: 4, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
         <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
             <Security color="secondary" sx={{ mr: 1.5, fontSize: 32 }} />
@@ -593,7 +597,7 @@ const ProfilePage = () => {
             fullWidth
             sx={{ py: 1.5, fontWeight: 'bold', fontSize: '1rem', borderRadius: 2 }}
           >
-            {modalLoading ? 'Đang cập nhật...' : t('modal_complete_btn')}
+            {modalLoading ? t('profile_updating') : t('modal_complete_btn')}
           </Button>
         </DialogActions>
       </Dialog>

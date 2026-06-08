@@ -42,7 +42,7 @@ import MapIcon from '@mui/icons-material/Map';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { useTranslation } from 'react-i18next';
+import { useTranslate } from '../../hooks/useTranslate';
 import { tourService } from '../../services/tourService';
 import { vehicleService } from '../../services/vehicleService';
 import { membershipService } from '../../services/membershipService';
@@ -85,7 +85,8 @@ function stringAvatar(name) {
 export default function TourDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, currentLanguage } = useTranslate(['common', 'tour']);
+  const localeCode = currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
   const theme = useTheme();
 
   const [tour, setTour] = useState(null);
@@ -1162,7 +1163,7 @@ export default function TourDetailPage() {
       <Box sx={{ mt: 4 }}>
         <Alert severity="error" action={
           <Button color="inherit" size="small" onClick={handleBack} startIcon={<ArrowBackIcon />}>
-            Quay lại
+            {t('back')}
           </Button>
         }>
           {error}
@@ -1176,7 +1177,7 @@ export default function TourDetailPage() {
       <Box sx={{ p: 4, textAlign: 'center', bgcolor: 'background.default', minHeight: '100vh' }}>
         <Typography color="text.secondary">Không có dữ liệu tour.</Typography>
         <Button sx={{ mt: 2 }} onClick={handleBack} startIcon={<ArrowBackIcon />}>
-          Quay lại
+          {t('back')}
         </Button>
       </Box>
     );
@@ -1229,7 +1230,7 @@ export default function TourDetailPage() {
               startIcon={<ArrowBackIcon />}
               sx={{ borderRadius: 3, fontWeight: 'bold', px: 3 }}
             >
-              Quay lại danh sách Tour
+              {t('tour_list_back')}
             </Button>
           </Box>
         </Box>
@@ -1259,7 +1260,7 @@ export default function TourDetailPage() {
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center' }}>
               <EventIcon sx={{ fontSize: 14, mr: 0.5 }} />
-              {new Date(tour.start_time).toLocaleDateString('vi-VN')} - {new Date(tour.end_time).toLocaleDateString('vi-VN')}
+              {new Date(tour.start_time).toLocaleDateString(localeCode)} - {new Date(tour.end_time).toLocaleDateString(localeCode)}
             </Typography>
           </Box>
           <Avatar sx={{ width: 32, height: 32, border: '2px solid white' }}>
@@ -1422,10 +1423,10 @@ export default function TourDetailPage() {
           }}
           sx={{ height: 65, '& .MuiBottomNavigationAction-label': { fontWeight: 600 } }}
         >
-          <BottomNavigationAction label="Tổng quan" icon={<DashboardIcon />} />
-          <BottomNavigationAction label="Hành khách" icon={<GroupsIcon />} />
-          <BottomNavigationAction label="Xe" icon={<DirectionsBusIcon />} />
-          <BottomNavigationAction label="Lịch trình" icon={<AccessTimeFilledIcon />} />
+          <BottomNavigationAction label={t('tab_overview')} icon={<DashboardIcon />} />
+          <BottomNavigationAction label={t('tab_passengers')} icon={<GroupsIcon />} />
+          <BottomNavigationAction label={t('tab_vehicles')} icon={<DirectionsBusIcon />} />
+          <BottomNavigationAction label={t('tab_schedule')} icon={<AccessTimeFilledIcon />} />
         </BottomNavigation>
       </Paper>
 
@@ -1499,7 +1500,7 @@ export default function TourDetailPage() {
           <Typography variant="h6" fontWeight={800}>📋 Điểm danh Hành khách</Typography>
           {selectedItinerary && (
             <Typography variant="body2" sx={{ opacity: 0.85, mt: 0.5 }}>
-              🕐 {new Date(selectedItinerary.date).toLocaleString('vi-VN', { dateStyle: 'medium', timeStyle: 'short' })} &nbsp;·&nbsp; 📍 {selectedItinerary.location}
+              🕐 {new Date(selectedItinerary.date).toLocaleString(localeCode, { dateStyle: 'medium', timeStyle: 'short' })} &nbsp;·&nbsp; 📍 {selectedItinerary.location}
             </Typography>
           )}
           {/* Summary stats */}
@@ -3156,9 +3157,9 @@ export default function TourDetailPage() {
                   }}
                 >
                   <Typography variant="caption" color="warning.dark">
-                    ⏰ Link hết hạn lúc:{' '}
+                    {t('invite_link_expires')}{' '}
                     <strong>
-                      {tour ? new Date(tour.start_time).toLocaleString('vi-VN', {
+                      {tour ? new Date(tour.start_time).toLocaleString(localeCode, {
                         dateStyle: 'full',
                         timeStyle: 'short',
                       }) : ''}

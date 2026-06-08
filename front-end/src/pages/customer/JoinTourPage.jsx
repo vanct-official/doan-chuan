@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslate } from '../../hooks/useTranslate';
 import {
   Box, Typography, Button, Paper, Stack, Chip, Divider,
   TextField, MenuItem, Select, FormControl, InputLabel,
@@ -23,6 +24,7 @@ const EMPTY_EXTRA = () => ({
 });
 
 export default function JoinTourPage() {
+  const { t } = useTranslate(['auth', 'common', 'tour']);
   const { token } = useParams();
   const navigate = useNavigate();
 
@@ -158,7 +160,7 @@ export default function JoinTourPage() {
       >
         <Stack alignItems="center" spacing={2}>
           <CircularProgress sx={{ color: '#fff' }} size={48} />
-          <Typography color="#fff" variant="h6">Đang tải thông tin tour...</Typography>
+          <Typography color="#fff" variant="h6">{t('common.messages.loading')}</Typography>
         </Stack>
       </Box>
     );
@@ -181,9 +183,9 @@ export default function JoinTourPage() {
       >
         <Paper sx={{ p: 5, borderRadius: 4, maxWidth: 460, textAlign: 'center' }}>
           <Typography variant="h5" fontWeight="bold" color="error" mb={2}>Oops!</Typography>
-          <Typography color="text.secondary" mb={3}>{tourError || 'Link không hợp lệ hoặc tour không tồn tại.'}</Typography>
+          <Typography color="text.secondary" mb={3}>{tourError || t('common.messages.error')}</Typography>
           <Button variant="contained" component={Link} to="/tours" startIcon={<ArrowBackIcon />}>
-            Về danh sách tour
+            {t('tour_list_back')}
           </Button>
         </Paper>
       </Box>
@@ -222,7 +224,7 @@ export default function JoinTourPage() {
             Liên hệ với người tổ chức để được cấp link mới.
           </Typography>
           <Button variant="contained" component={Link} to="/tours">
-            Khám phá các tour khác
+            {t('tour_list_back')}
           </Button>
         </Paper>
       </Box>
@@ -314,7 +316,7 @@ export default function JoinTourPage() {
               startIcon={<ArrowBackIcon />}
               sx={{ color: 'text.secondary' }}
             >
-              Về trang chủ
+              {t('menu_home')}
             </Button>
           </Stack>
         </Paper>
@@ -361,7 +363,7 @@ export default function JoinTourPage() {
               Xem chi tiết Tour
             </Button>
             <Button variant="outlined" fullWidth component={Link} to="/tours" sx={{ borderRadius: 3 }}>
-              Về danh sách Tour
+              {t('tour_list_back')}
             </Button>
           </Stack>
         </Paper>
@@ -390,7 +392,7 @@ export default function JoinTourPage() {
             to="/tours"
             sx={{ color: 'rgba(255,255,255,0.7)', '&:hover': { color: '#fff' } }}
           >
-            Trang chủ
+            {t('menu_home')}
           </Button>
           <Chip
             label={`Còn ${daysLeft} ngày`}
@@ -538,7 +540,7 @@ export default function JoinTourPage() {
                 to="/tours"
                 sx={{ borderRadius: 3 }}
               >
-                Có thể sau
+                {t('cancel')}
               </Button>
             </Stack>
           </Paper>
@@ -727,7 +729,7 @@ export default function JoinTourPage() {
                 disabled={submitting}
                 sx={{ borderRadius: 3 }}
               >
-                Quay lại
+                {t('back')}
               </Button>
             </Stack>
           </Paper>
