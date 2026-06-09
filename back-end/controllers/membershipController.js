@@ -203,6 +203,8 @@ exports.addMembersBatch = async (req, res) => {
       newGroupId = group._id;
     }
 
+    const createdMemberships = [];
+
     for (const item of members) {
       let finalUserId = item.user_id || null;
       let finalGuestInfo = item.user_id ? null : {
