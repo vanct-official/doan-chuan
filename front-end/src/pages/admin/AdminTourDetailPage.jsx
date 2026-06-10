@@ -112,7 +112,22 @@ export default function AdminTourDetailPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Form states
-  const [tourForm, setTourForm] = useState({ name: '', start_time: '', end_time: '', max_capacity: '' });
+  const [users, setUsers] = useState([]);
+  const [tourForm, setTourForm] = useState({ name: '', start_time: '', end_time: '', max_capacity: '', leader_id: '' });
+
+  useEffect(() => {
+    const loadUsers = async () => {
+      try {
+        const res = await authService.getAllUsers();
+        if (res && res.users) {
+          setUsers(res.users);
+        }
+      } catch (err) {
+        console.error('Failed to load users:', err);
+      }
+    };
+    loadUsers();
+  }, []);
 
   // Passenger Form State
   const [passengerForm, setPassengerForm] = useState({
@@ -312,7 +327,8 @@ export default function AdminTourDetailPage() {
       name: tour.name || '',
       start_time: formatForDateTimeLocal(tour.start_time),
       end_time: formatForDateTimeLocal(tour.end_time),
-      max_capacity: tour.max_capacity || ''
+      max_capacity: tour.max_capacity || '',
+      leader_id: tour.leader_id?._id || tour.leader_id || ''
     });
     setActionError('');
     setActionSuccess('');
@@ -329,7 +345,8 @@ export default function AdminTourDetailPage() {
         name: tourForm.name,
         start_time: parseDateTimeLocalToISO(tourForm.start_time),
         end_time: parseDateTimeLocalToISO(tourForm.end_time),
-        max_capacity: Number(tourForm.max_capacity)
+        max_capacity: Number(tourForm.max_capacity),
+        leader_id: tourForm.leader_id
       });
 
       if (response.success) {
@@ -1239,7 +1256,9 @@ export default function AdminTourDetailPage() {
                     const matchedVehicle = vehicles.find(v => v._id === m.vehicle_id);
 
                     // Group
-                    const groupName = m.group_id?.name || (m.group_id ? t('tour_group_suffix', { id: m.group_id }) : t('tour_no_group'));
+                    const passGroupId = m.group_id?._id || m.group_id;
+                    const matchedGroup = groups.find(g => g._id === passGroupId);
+                    const groupName = matchedGroup?.name || m.group_id?.name || (m.group_id ? t('tour_group_suffix', { id: passGroupId }) : t('tour_no_group'));
 
                     return (
                       <TableRow key={m._id} hover>
@@ -1549,6 +1568,26 @@ export default function AdminTourDetailPage() {
               onChange={(e) => setTourForm({ ...tourForm, max_capacity: e.target.value })}
               disabled={actionLoading}
             />
+            <FormControl fullWidth margin="normal" required disabled={actionLoading}>
+              <InputLabel id="edit-tour-leader-label">Trưởng đoàn (Tour Leader)</InputLabel>
+              <Select
+                labelId="edit-tour-leader-label"
+                value={tourForm.leader_id || ''}
+                label="Trưởng đoàn (Tour Leader)"
+                onChange={(e) => setTourForm({ ...tourForm, leader_id: e.target.value })}
+              >
+                {users.length === 0 && tour?.leader_id && (
+                  <MenuItem value={tour.leader_id?._id || tour.leader_id}>
+                    {tour.leader_id?.name || 'Trưởng đoàn hiện tại'}
+                  </MenuItem>
+                )}
+                {users.map((u) => (
+                  <MenuItem key={u._id} value={u._id}>
+                    {u.name} ({u.phone || 'Chưa có SĐT'})
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </form>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

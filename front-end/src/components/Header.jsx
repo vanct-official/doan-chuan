@@ -70,9 +70,14 @@ export const Header = ({ onMenuClick }) => {
 
   const drawer = (
     <Box onClick={() => setMobileOpen(false)} sx={{ textAlign: 'center', width: 250, pt: 'env(safe-area-inset-top)' }}>
-      <Typography variant="h6" sx={{ my: 2, fontWeight: 'bold' }}>
-        {t('common.app.title')}
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, bgcolor: '#4f46e5' }}>
+        <img
+          src="/doanchuan_vanct.png"
+          alt="Đoàn Chuẩn Logo"
+          style={{ height: 40, cursor: 'pointer', objectFit: 'contain' }}
+          onClick={() => handleNavigate('/')}
+        />
+      </Box>
       <Divider />
       <Box sx={{ px: 2, py: 1.5 }}>
         <InstallPwaButton variant="contained" size="small" />
@@ -145,14 +150,14 @@ export const Header = ({ onMenuClick }) => {
           <MenuIcon />
         </IconButton>
 
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1, cursor: 'pointer' }}
-          onClick={() => handleNavigate('/')}
-        >
-          {t('common.app.title')}
-        </Typography>
+        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
+          <img
+            src="/doanchuan_vanct.png"
+            alt="Đoàn Chuẩn Logo"
+            style={{ height: 36, cursor: 'pointer', objectFit: 'contain' }}
+            onClick={() => handleNavigate('/')}
+          />
+        </Box>
 
         <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
           <InstallPwaButton variant="outlined" size="small" />

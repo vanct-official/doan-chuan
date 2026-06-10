@@ -61,6 +61,7 @@ exports.getTourById = async (req, res) => {
     // Lấy danh sách thành viên/hành khách của tour này
     const memberships = await Membership.find(membershipQuery)
       .populate('user_id', 'name email phone dob gender')
+      .populate('group_id', 'name')
       .sort({ createdAt: 1 });
 
     // Lấy danh sách phương tiện xe của tour này
@@ -84,7 +85,7 @@ exports.getTourById = async (req, res) => {
 
 exports.updateTour = async (req, res) => {
   try {
-    const { name, start_time, end_time, max_capacity } = req.body;
+    const { name, start_time, end_time, max_capacity, leader_id } = req.body;
     const tourId = req.params.id;
 
     const tour = await Tour.findById(tourId);
@@ -102,6 +103,24 @@ exports.updateTour = async (req, res) => {
     tour.end_time = end_time || tour.end_time;
     tour.deadline = start_time || tour.deadline; // deadline matches start_time as required
     tour.max_capacity = max_capacity !== undefined ? Number(max_capacity) : tour.max_capacity;
+
+    if (leader_id && leader_id !== tour.leader_id.toString()) {
+      // 1. Demote old leader(s) to member role in memberships list
+      await Membership.updateMany(
+        { tour_id: tourId, role: 'leader' },
+        { $set: { role: 'member' } }
+      );
+
+      // 2. Assign the new leader
+      tour.leader_id = leader_id;
+
+      // 3. Update or create the new leader's membership
+      await Membership.findOneAndUpdate(
+        { tour_id: tourId, user_id: leader_id },
+        { $set: { role: 'leader', status: 'approved' } },
+        { upsert: true, new: true }
+      );
+    }
 
     await tour.save();
     res.status(200).json({ success: true, message: 'Cập nhật Tour thành công!', tour });

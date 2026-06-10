@@ -1560,7 +1560,7 @@ export default function TourDetailPage() {
             const sections = [];
             groupMap.forEach((gMembers, key) => {
               const groupObj = key !== '__none__' ? groups.find(g => g._id.toString() === key) : null;
-              const groupName = groupObj?.name || (key === '__none__' ? t('tour_no_group') : t('tour_group_suffix', { id: key.slice(-4) }));
+              const groupName = groupObj?.name || gMembers.find(m => m.group_id?.name)?.group_id?.name || (key === '__none__' ? t('tour_no_group') : t('tour_group_suffix', { id: key.slice(-4) }));
               const groupMemberIds = gMembers.map(m => m._id);
               const groupPresentCount = gMembers.filter(m => {
                 const rec = attendanceData.find(a => a.membership_id === m._id);

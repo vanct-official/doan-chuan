@@ -1,16 +1,24 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter as Router, Routes, Route, Outlet } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Outlet, useNavigate, Navigate } from "react-router-dom";
 import { CustomerLayout } from "./layouts/CustomerLayout.jsx";
 import { AdminLayout } from "./layouts/AdminLayout.jsx";
 import { 
   Typography, Box, CircularProgress, Card, CardHeader, CardContent, 
-  TextField, Button, Alert, Snackbar 
+  TextField, Button, Alert, Snackbar, Grid, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, Paper, Avatar, Chip, Stack
 } from "@mui/material";
 import SaveIcon from '@mui/icons-material/Save';
+import TourIcon from '@mui/icons-material/Tour';
+import PeopleIcon from '@mui/icons-material/People';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import AirlineSeatReclineNormalIcon from '@mui/icons-material/AirlineSeatReclineNormal';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { PwaProvider } from "./components/pwa/PwaProvider.jsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import { useTranslate } from "./hooks/useTranslate.js";
 import { settingService } from './services/settingService';
+import { dashboardService } from './services/dashboardService';
 
 const HomePage = lazy(() => import("./pages/customer/HomePage.jsx"));
 const ToursPage = lazy(() =>
@@ -28,6 +36,7 @@ const AdminUsersPage = lazy(() =>
   import("./pages/admin/AdminUsersPage.jsx").then((m) => ({ default: m.AdminUsersPage }))
 );
 const AdminTourDetailPage = lazy(() => import("./pages/admin/AdminTourDetailPage.jsx"));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage.jsx"));
 
 
 const PageLoader = () => (
@@ -38,142 +47,195 @@ const PageLoader = () => (
 
 const AdminDashboard = () => {
   const { t } = useTranslate(['common', 'tour']);
-  const [contactLink, setContactLink] = React.useState('');
+  const [stats, setStats] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
-  const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState(null);
-  const [toast, setToast] = React.useState({ open: false, message: '', severity: 'success' });
+  const navigate = useNavigate();
 
   React.useEffect(() => {
-    const fetchSetting = async () => {
+    const fetchStats = async () => {
       try {
-        const data = await settingService.getSetting('contact_link');
-        if (data && data.success) {
-          setContactLink(data.value || '');
+        const res = await dashboardService.getStats();
+        if (res && res.success) {
+          setStats(res.data);
+        } else {
+          setError('Không thể lấy thống kê.');
         }
       } catch (err) {
-        console.error('Lỗi khi tải cấu hình liên hệ:', err);
-        setError('Không thể tải cấu hình liên hệ từ máy chủ.');
+        console.error('Lỗi khi tải thống kê:', err);
+        setError(err.response?.data?.message || err.message || 'Lỗi khi tải thống kê.');
       } finally {
         setLoading(false);
       }
     };
-    fetchSetting();
+    fetchStats();
   }, []);
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      const data = await settingService.updateSetting('contact_link', contactLink);
-      if (data && data.success) {
-        setToast({
-          open: true,
-          message: 'Cập nhật đường dẫn liên hệ thành công!',
-          severity: 'success'
-        });
-      } else {
-        setError('Không thể lưu cấu hình.');
-      }
-    } catch (err) {
-      console.error('Lỗi khi lưu cấu hình liên hệ:', err);
-      setError(err.response?.data?.message || err.message || 'Lỗi khi lưu cấu hình.');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
         <CircularProgress />
       </Box>
     );
   }
 
+  const statCards = [
+    {
+      title: 'Tổng số Tour',
+      value: stats?.totalTours || 0,
+      sub: `${stats?.activeTours || 0} tour đang/sắp chạy`,
+      icon: <TourIcon sx={{ fontSize: 28 }} />,
+      color: '#4f46e5',
+      bgcolor: 'rgba(79, 70, 229, 0.08)'
+    },
+    {
+      title: 'Tổng người dùng',
+      value: stats?.totalUsers || 0,
+      sub: 'Tài khoản đăng ký hệ thống',
+      icon: <PeopleIcon sx={{ fontSize: 28 }} />,
+      color: '#06b6d4',
+      bgcolor: 'rgba(6, 182, 212, 0.08)'
+    },
+    {
+      title: 'Hành khách duyệt',
+      value: stats?.totalPassengers || 0,
+      sub: 'Tổng số lượt khách tham gia các tour',
+      icon: <AirlineSeatReclineNormalIcon sx={{ fontSize: 28 }} />,
+      color: '#10b981',
+      bgcolor: 'rgba(16, 185, 129, 0.08)'
+    },
+    {
+      title: 'Số phương tiện xe',
+      value: stats?.totalVehicles || 0,
+      sub: 'Xe được điều động phục vụ đoàn',
+      icon: <DirectionsCarIcon sx={{ fontSize: 28 }} />,
+      color: '#f59e0b',
+      bgcolor: 'rgba(245, 158, 11, 0.08)'
+    }
+  ];
+
   return (
-    <Box sx={{ maxWidth: 600, mx: 'auto', mt: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>
-        {t('common.navigation.dashboard')}
-      </Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        Quản lý cấu hình chung cho hệ thống
-      </Typography>
+    <Box sx={{ p: 1 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
+            {t('common.navigation.dashboard')}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Thống kê tổng quan và quản lý hoạt động hệ thống
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+          <ShowChartIcon color="primary" />
+          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Hệ thống đang hoạt động</Typography>
+        </Box>
+      </Stack>
 
-      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 2.5 }}>{error}</Alert>}
+      {error && <Alert severity="error" sx={{ mb: 4, borderRadius: 3 }}>{error}</Alert>}
 
-      <Card 
-        elevation={4} 
-        sx={{ 
-          borderRadius: 4, 
-          overflow: 'hidden',
-          border: '1px solid',
-          borderColor: 'divider',
-        }}
-      >
+      {/* Stats Cards Grid */}
+      <Grid container spacing={3} sx={{ mb: 5 }}>
+        {statCards.map((c, i) => (
+          <Grid item xs={12} sm={6} md={3} key={i}>
+            <Card variant="outlined" sx={{ borderRadius: 4, p: 2.5, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', borderLeft: `5px solid ${c.color}` }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {c.title}
+                </Typography>
+                <Avatar sx={{ bgcolor: c.bgcolor, color: c.color, width: 46, height: 46 }}>
+                  {c.icon}
+                </Avatar>
+              </Box>
+              <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, color: 'text.primary' }}>
+                {c.value}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', display: 'block' }}>
+                {c.sub}
+              </Typography>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Recent Tours Table */}
+      <Card variant="outlined" sx={{ borderRadius: 4, overflow: 'hidden' }}>
         <CardHeader
-          title="Cấu hình nút liên hệ hỗ trợ (FAB)"
-          subheader="Đường dẫn liên lạc hiển thị ở góc dưới bên phải trang của khách hàng"
-          titleTypographyProps={{ fontWeight: 'bold', fontSize: '1.2rem' }}
-          subheaderTypographyProps={{ fontSize: '0.82rem' }}
-          sx={{
-            bgcolor: 'action.hover',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-            px: 3,
-            py: 2.5,
-          }}
+          title="Các Tour du lịch gần đây"
+          titleTypographyProps={{ fontWeight: 800, fontSize: '1.15rem' }}
+          action={
+            <Button 
+              size="small" 
+              onClick={() => navigate('/admin/tours')} 
+              endIcon={<ArrowForwardIcon />}
+              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+            >
+              Xem tất cả
+            </Button>
+          }
+          sx={{ borderBottom: '1px solid', borderColor: 'divider', px: 3, py: 2 }}
         />
-        <CardContent sx={{ p: 3 }}>
-          <form onSubmit={handleSave}>
-            <TextField
-              fullWidth
-              label="Đường dẫn liên hệ / Số điện thoại"
-              variant="outlined"
-              placeholder="Ví dụ: https://zalo.me/0987654321, tel:0987654321..."
-              value={contactLink}
-              onChange={(e) => setContactLink(e.target.value)}
-              disabled={saving}
-              sx={{ mb: 2 }}
-              helperText="Hỗ trợ các đường dẫn Zalo, Facebook Messenger, số điện thoại (tel:), email (mailto:), hoặc đường dẫn trang web bất kỳ. Để trống để ẩn nút liên hệ."
-            />
-            
-            <Box display="flex" justifyContent="flex-end" sx={{ mt: 3 }}>
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={saving}
-                startIcon={<SaveIcon />}
-                sx={{
-                  py: 1.2,
-                  px: 3,
-                  fontWeight: 'bold',
-                  borderRadius: 2.5,
-                  boxShadow: '0 4px 12px rgba(79, 70, 229, 0.25)',
-                  textTransform: 'none',
-                }}
-              >
-                {saving ? 'Đang lưu...' : 'Lưu cấu hình'}
-              </Button>
-            </Box>
-          </form>
-        </CardContent>
+        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+          <Table size="medium">
+            <TableHead sx={{ bgcolor: 'action.hover' }}>
+              <TableRow>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary', pl: 3 }}>Tên Tour</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Trưởng đoàn</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thời gian khởi hành</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thời gian kết thúc</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }} align="center">Sức chứa</TableCell>
+                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary', pr: 3 }} align="center">Thao tác</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {!stats?.recentTours || stats.recentTours.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', fontStyle: 'italic' }}>
+                    Chưa có tour nào được tạo.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                stats.recentTours.map((t) => (
+                  <TableRow key={t._id} hover>
+                    <TableCell sx={{ fontWeight: 'bold', pl: 3 }}>{t.name}</TableCell>
+                    <TableCell>{t.leader_id?.name || 'Chưa chỉ định'}</TableCell>
+                    <TableCell>
+                      {new Date(t.start_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(t.end_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
+                    </TableCell>
+                    <TableCell align="center">{t.max_capacity} khách</TableCell>
+                    <TableCell align="center" sx={{ pr: 3 }}>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => navigate(`/admin/tours/${t._id}`)}
+                        sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 'bold' }}
+                      >
+                        Chi tiết
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Card>
-
-      <Snackbar
-        open={toast.open}
-        autoHideDuration={4000}
-        onClose={() => setToast({ ...toast, open: false })}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <Alert onClose={() => setToast({ ...toast, open: false })} severity={toast.severity} sx={{ width: '100%', borderRadius: 2 }}>
-          {toast.message}
-        </Alert>
-      </Snackbar>
     </Box>
   );
+};
+
+const CustomerRouteGuard = ({ children }) => {
+  const userStr = localStorage.getItem('user');
+  const user = userStr ? JSON.parse(userStr) : null;
+
+  if (user && user.role === 'admin') {
+    const lastAdminPath = localStorage.getItem('last_admin_path') || '/admin';
+    return <Navigate to={lastAdminPath} replace />;
+  }
+
+  return children;
 };
 
 function App() {
@@ -183,7 +245,7 @@ function App() {
         <PwaProvider>
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              <Route path="/" element={<CustomerLayout><Outlet /></CustomerLayout>}>
+              <Route path="/" element={<CustomerRouteGuard><CustomerLayout><Outlet /></CustomerLayout></CustomerRouteGuard>}>
                 <Route index element={<HomePage />} />
                 <Route path="tours" element={<ToursPage />} />
                 <Route path="login" element={<LoginPage />} />
@@ -192,16 +254,18 @@ function App() {
               </Route>
 
               {/* TourDetail fullscreen — không bọc CustomerLayout (tránh 100vh + Header gây màn trắng) */}
-              <Route path="/tours/:id" element={<TourDetailPage />} />
+              <Route path="/tours/:id" element={<CustomerRouteGuard><TourDetailPage /></CustomerRouteGuard>} />
 
               <Route path="/admin" element={<AdminLayout><Outlet /></AdminLayout>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="tours" element={<AdminToursPage />} />
                 <Route path="tours/:id" element={<AdminTourDetailPage />} />
                 <Route path="users" element={<AdminUsersPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="settings" element={<AdminSettingsPage />} />
               </Route>
 
-              <Route path="/join/:token" element={<JoinTourPage />} />
+              <Route path="/join/:token" element={<CustomerRouteGuard><JoinTourPage /></CustomerRouteGuard>} />
             </Routes>
           </Suspense>
         </PwaProvider>

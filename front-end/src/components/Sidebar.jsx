@@ -8,16 +8,21 @@ import PeopleIcon from '@mui/icons-material/People';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import TourIcon from '@mui/icons-material/Tour';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
 
-export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
+export const Sidebar = ({ mobileOpen, handleDrawerToggle, collapsed = false }) => {
   const { t } = useTranslation();
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const location = useLocation();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+
+  const isSidebarCollapsed = isMobile ? false : collapsed;
+  const drawerWidth = isSidebarCollapsed ? 72 : 240;
 
   const isActive = (path) => {
     if (path === '/admin') {
@@ -44,14 +49,36 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     { text: t('menu_dashboard'), path: '/admin', icon: <DashboardIcon /> },
     { text: t('menu_tours'), path: '/admin/tours', icon: <TourIcon /> },
     { text: t('menu_users'), path: '/admin/users', icon: <PeopleIcon /> },
+    { text: t('profile'), path: '/admin/profile', icon: <PersonIcon /> },
+    { text: t('menu_settings'), path: '/admin/settings', icon: <SettingsIcon /> },
   ];
 
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', pt: 'env(safe-area-inset-top)' }}>
       <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '0.5px', color: 'primary.main' }}>
-          ADMIN PORTAL
-        </Typography>
+        {isSidebarCollapsed ? (
+          <Box 
+            onClick={() => window.location.href = '/admin'}
+            sx={{ bgcolor: '#4f46e5', p: 0.8, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, cursor: 'pointer' }}
+          >
+            <img
+              src="/doanchuan_vanct.png"
+              alt="Logo"
+              style={{ height: 24, width: 24, objectFit: 'cover', objectPosition: 'left' }}
+            />
+          </Box>
+        ) : (
+          <Box 
+            onClick={() => window.location.href = '/admin'}
+            sx={{ bgcolor: '#4f46e5', py: 0.8, px: 1.5, borderRadius: 2, display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}
+          >
+            <img
+              src="/doanchuan_vanct.png"
+              alt="Đoàn Chuẩn Logo"
+              style={{ height: 24, objectFit: 'contain' }}
+            />
+          </Box>
+        )}
       </Toolbar>
       
       <Box sx={{ flexGrow: 1 }}>
@@ -68,7 +95,8 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
                   sx={{
                     borderRadius: '10px',
                     py: 1.2,
-                    px: 2,
+                    px: isSidebarCollapsed ? 1.5 : 2,
+                    justifyContent: isSidebarCollapsed ? 'center' : 'initial',
                     transition: 'all 0.2s ease',
                     '&.Mui-selected': {
                       backgroundColor: 'primary.main',
@@ -83,20 +111,22 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
                     },
                     '&:hover:not(.Mui-selected)': {
                       backgroundColor: 'action.hover',
-                      transform: 'translateX(4px)',
+                      transform: isSidebarCollapsed ? 'none' : 'translateX(4px)',
                     },
                   }}
                 >
-                  <ListItemIcon sx={{ minWidth: 40, color: active ? 'primary.contrastText' : 'text.secondary', transition: 'color 0.2s' }}>
+                  <ListItemIcon sx={{ minWidth: isSidebarCollapsed ? 0 : 40, justifyContent: 'center', color: active ? 'primary.contrastText' : 'text.secondary', transition: 'color 0.2s' }}>
                     {item.icon}
                   </ListItemIcon>
-                  <ListItemText 
-                    primary={item.text} 
-                    primaryTypographyProps={{ 
-                      fontSize: '0.95rem', 
-                      fontWeight: active ? 600 : 500,
-                    }} 
-                  />
+                  {!isSidebarCollapsed && (
+                    <ListItemText 
+                      primary={item.text} 
+                      primaryTypographyProps={{ 
+                        fontSize: '0.95rem', 
+                        fontWeight: active ? 600 : 500,
+                      }} 
+                    />
+                  )}
                 </ListItemButton>
               </ListItem>
             );
@@ -113,25 +143,28 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
               sx={{
                 borderRadius: '10px',
                 py: 1.2,
-                px: 2,
+                px: isSidebarCollapsed ? 1.5 : 2,
+                justifyContent: isSidebarCollapsed ? 'center' : 'initial',
                 color: 'error.main',
                 transition: 'all 0.2s ease',
                 '&:hover': {
                   backgroundColor: (theme) => theme.palette.mode === 'light' ? 'rgba(244, 63, 94, 0.08)' : 'rgba(244, 63, 94, 0.15)',
-                  transform: 'translateX(4px)',
+                  transform: isSidebarCollapsed ? 'none' : 'translateX(4px)',
                 },
               }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+              <ListItemIcon sx={{ minWidth: isSidebarCollapsed ? 0 : 40, justifyContent: 'center', color: 'error.main' }}>
                 <LogoutIcon />
               </ListItemIcon>
-              <ListItemText 
-                primary={t('logout')} 
-                primaryTypographyProps={{ 
-                  fontSize: '0.95rem', 
-                  fontWeight: 600,
-                }} 
-              />
+              {!isSidebarCollapsed && (
+                <ListItemText 
+                  primary={t('logout')} 
+                  primaryTypographyProps={{ 
+                    fontSize: '0.95rem', 
+                    fontWeight: 600,
+                  }} 
+                />
+              )}
             </ListItemButton>
           </ListItem>
         </List>
@@ -140,7 +173,7 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   );
   
   return (
-    <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
+    <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 }, transition: 'width 0.2s ease' }}>
       {isMobile ? (
         <Drawer
           variant="temporary"
@@ -150,7 +183,7 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           sx={{ 
             '& .MuiDrawer-paper': { 
               boxSizing: 'border-box', 
-              width: drawerWidth,
+              width: 240,
               borderRight: '1px solid',
               borderColor: 'divider',
               boxShadow: '4px 0 24px rgba(0,0,0,0.05)'
@@ -168,8 +201,13 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
               width: drawerWidth,
               borderRight: '1px solid',
               borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'light' ? '#ffffff' : '#0f172a'
-            } 
+              background: (theme) => theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+              transition: 'width 0.2s ease',
+              overflowX: 'hidden'
+            },
+            width: drawerWidth,
+            transition: 'width 0.2s ease',
+            flexShrink: 0
           }}
           open
         >

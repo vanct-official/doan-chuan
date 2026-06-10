@@ -378,7 +378,8 @@ export default function PeopleTab({
     groupMap.forEach((members, key) => {
       const alreadyAdded = result.some(r => r.key === key);
       if (!alreadyAdded) {
-        result.push({ key, name: t('tour_group_suffix', { id: key.slice(-4) }), color: groupColors.success, members });
+        const fallbackName = members.find(m => m.group_id?.name)?.group_id?.name || t('tour_group_suffix', { id: key.slice(-4) });
+        result.push({ key, name: fallbackName, color: groupColors.success, members });
       }
     });
 

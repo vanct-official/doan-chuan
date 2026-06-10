@@ -13,6 +13,7 @@ const groupController = require('../controllers/groupController');
 const itineraryController = require('../controllers/itineraryController');
 const attendanceController = require('../controllers/attendanceController');
 const settingController = require('../controllers/settingController');
+const dashboardController = require('../controllers/dashboardController');
 
 /**
  * @swagger
@@ -512,5 +513,10 @@ router.post('/attendance/batch', authMiddleware, attendanceController.markAttend
 // ----------------------------------------------------------------------
 router.get('/settings/:key', settingController.getSetting);
 router.put('/settings/:key', authMiddleware, settingController.updateSetting);
+
+// ----------------------------------------------------------------------
+// Dashboard routes
+// ----------------------------------------------------------------------
+router.get('/dashboard/stats', authMiddleware, dashboardController.getDashboardStats);
 
 module.exports = router;
