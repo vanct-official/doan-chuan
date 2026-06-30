@@ -18,6 +18,7 @@ import PersonIcon from '@mui/icons-material/Person';
 import ManIcon from '@mui/icons-material/Man';
 import WomanIcon from '@mui/icons-material/Woman';
 import { useTranslate } from '../../../hooks/useTranslate';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -321,6 +322,7 @@ export default function PeopleTab({
   onAssignVehicle,
   onDeletePassenger,
   onLeavePassenger,
+  onExportExcel,
 }) {
   const { t } = useTranslate(['common', 'tour']);
   const theme = useTheme();
@@ -420,24 +422,44 @@ export default function PeopleTab({
           sx={{ mb: 1.5 }}
         />
 
-        {/* Filter Chips */}
-        <Box sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { display: 'none' } }}>
-          {[
-            { key: 'active', label: t('tour_filter_active', { count: totalActive }) },
-            { key: 'pending', label: t('tour_filter_pending', { count: totalPending }), color: 'warning' },
-            { key: 'no_vehicle', label: t('tour_filter_no_vehicle', { count: totalNoVehicle }), color: 'error' },
-            { key: 'all', label: t('tour_filter_all') },
-          ].map(f => (
-            <Chip
-              key={f.key}
-              label={f.label}
-              onClick={() => setFilterStatus(f.key)}
-              color={filterStatus === f.key ? (f.color || 'primary') : 'default'}
-              variant={filterStatus === f.key ? 'filled' : 'outlined'}
-              size="small"
-              sx={{ fontWeight: filterStatus === f.key ? 700 : 400, flexShrink: 0, fontSize: '0.75rem' }}
-            />
-          ))}
+        {/* Filter Chips and Export Button Row */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', gap: 0.75, overflowX: 'auto', pb: 0.5, '&::-webkit-scrollbar': { display: 'none' }, flex: 1 }}>
+            {[
+              { key: 'active', label: t('tour_filter_active', { count: totalActive }) },
+              { key: 'pending', label: t('tour_filter_pending', { count: totalPending }), color: 'warning' },
+              { key: 'no_vehicle', label: t('tour_filter_no_vehicle', { count: totalNoVehicle }), color: 'error' },
+              { key: 'all', label: t('tour_filter_all') },
+            ].map(f => (
+              <Chip
+                key={f.key}
+                label={f.label}
+                onClick={() => setFilterStatus(f.key)}
+                color={filterStatus === f.key ? (f.color || 'primary') : 'default'}
+                variant={filterStatus === f.key ? 'filled' : 'outlined'}
+                size="small"
+                sx={{ fontWeight: filterStatus === f.key ? 700 : 400, flexShrink: 0, fontSize: '0.75rem' }}
+              />
+            ))}
+          </Box>
+          {canEditItinerary && onExportExcel && (
+            <Tooltip title={t('tour_export_excel')}>
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={onExportExcel}
+                sx={{
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                  borderRadius: 2,
+                  p: 0.75,
+                  flexShrink: 0,
+                }}
+              >
+                <FileDownloadIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Box>
       </Box>
 

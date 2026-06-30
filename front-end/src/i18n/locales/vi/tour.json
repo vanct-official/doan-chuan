@@ -263,5 +263,6 @@
   "tour_leave_title": "Rời tour",
   "btn_close": "Đóng",
   "confirm_delete_itinerary": "Bạn có chắc chắn muốn xóa mốc lịch trình này?",
-  "tour_import_excel": "Import Excel"
+  "tour_import_excel": "Import Excel",
+  "tour_export_excel": "Xuất danh sách Excel"
 }

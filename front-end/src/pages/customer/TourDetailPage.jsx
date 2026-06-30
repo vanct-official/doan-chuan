@@ -52,6 +52,8 @@ import { authService } from '../../services/authService';
 import { offlineApi } from '../../services/offlineApi';
 import ExcelImportModal from '../../components/ExcelImportModal';
 import { formatForDateTimeLocal, parseDateTimeLocalToISO } from '../../utils/dateUtils';
+import * as xlsx from 'xlsx';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 
 // Helper function to generate avatar color and initials from name
 function stringToColor(string) {
@@ -312,6 +314,93 @@ export default function TourDetailPage() {
       setActionError(err.response?.data?.error || err.message || t('common.messages.error'));
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // 1B. EXPORT EXCEL HANDLER
+  const handleExportExcel = () => {
+    if (!memberships || memberships.length === 0) {
+      alert(t('tour_no_passengers_found') || 'Không có hành khách nào để xuất!');
+      return;
+    }
+
+    try {
+      const dataToExport = memberships.map((member) => {
+        const name = member.user_id?.name || member.guest_info?.name || '';
+        const phone = member.user_id?.phone || member.guest_info?.phone || member.phone || '';
+        
+        let birthYear = '';
+        if (member.user_id?.dob) {
+          birthYear = new Date(member.user_id.dob).getFullYear();
+        } else if (member.guest_info?.birth_year) {
+          birthYear = Number(member.guest_info.birth_year);
+        } else if (member.birth_year) {
+          birthYear = Number(member.birth_year);
+        }
+
+        let gender = '';
+        let genderRaw = null;
+        if (member.user_id) {
+          genderRaw = member.user_id.gender === true ? 'male' : member.user_id.gender === false ? 'female' : null;
+        } else {
+          genderRaw = member.guest_info?.gender || member.gender || null;
+        }
+        
+        if (genderRaw === 'male' || genderRaw === 'Nam') {
+          gender = 'Nam';
+        } else if (genderRaw === 'female' || genderRaw === 'Nữ') {
+          gender = 'Nữ';
+        }
+
+        let role = 'Thành viên';
+        if (member.role === 'leader') role = 'Trưởng đoàn';
+        else if (member.role === 'group_rep') role = 'Đại diện nhóm';
+        else if (member.role === 'vehicle_rep') role = 'Đại diện xe';
+        else if (member.role === 'driver') role = 'Tài xế';
+
+        let customerType = 'Người lớn';
+        if (member.customer_type === 'child') customerType = 'Trẻ em';
+        else if (member.customer_type === 'elderly') customerType = 'Người cao tuổi';
+
+        const groupName = member.group_id?.name || '';
+
+        const vehicleId = member.vehicle_id?._id || member.vehicle_id;
+        const vehicle = vehicles.find(v => v._id === vehicleId);
+        const vehiclePlate = vehicle ? vehicle.license_plate : '';
+
+        let status = 'Chờ duyệt';
+        if (member.status === 'approved') status = 'Đã duyệt';
+        else if (member.status === 'rejected') status = 'Từ chối';
+        else if (member.status === 'removed') status = 'Đã xóa';
+        else if (member.status === 'left') status = 'Đã rời';
+
+        const note = member.note || '';
+
+        return {
+          'Họ và tên (bắt buộc)': name,
+          'Số điện thoại': phone,
+          'Năm sinh': birthYear,
+          'Giới tính': gender,
+          'Vai trò': role,
+          'Loại khách': customerType,
+          'Tên nhóm': groupName,
+          'Phương tiện (Biển số)': vehiclePlate,
+          'Trạng thái': status,
+          'Ghi chú': note
+        };
+      });
+
+      const worksheet = xlsx.utils.json_to_sheet(dataToExport);
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, 'Danh sách hành khách');
+
+      const tourNameSafe = (tour.name || 'Tour').replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_');
+      const filename = `DanhSachHanhKhach_${tourNameSafe}.xlsx`;
+
+      xlsx.writeFile(workbook, filename);
+    } catch (err) {
+      console.error('Lỗi khi xuất file Excel:', err);
+      alert('Đã xảy ra lỗi khi xuất file Excel: ' + err.message);
     }
   };
 
@@ -1323,6 +1412,7 @@ export default function TourDetailPage() {
             }}
             onDeletePassenger={isCreatorOrAdmin ? handleDeletePassenger : undefined}
             onLeavePassenger={handleOpenLeaveDialog}
+            onExportExcel={handleExportExcel}
           />
         )}
 
@@ -1387,6 +1477,13 @@ export default function TourDetailPage() {
                   icon={<FormatListBulletedIcon />}
                   tooltipTitle={t('tour_import_excel')}
                   onClick={() => setExcelModalOpen(true)}
+                />
+              )}
+              {isCreatorOrAdmin && (
+                <SpeedDialAction
+                  icon={<FileDownloadIcon />}
+                  tooltipTitle={t('tour_export_excel')}
+                  onClick={handleExportExcel}
                 />
               )}
             </SpeedDial>

@@ -263,5 +263,6 @@
   "tour_leave_title": "ツアーを辞退する",
   "btn_close": "閉じる",
   "confirm_delete_itinerary": "この予定のチェックポイントを削除してもよろしいですか？",
-  "tour_import_excel": "Excelインポート"
+  "tour_import_excel": "Excelインポート",
+  "tour_export_excel": "乗客リストのエクスポート"
 }
