@@ -8,7 +8,8 @@ const tourSchema = new mongoose.Schema({
   max_capacity: { type: Number, required: true },
   created_by: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   leader_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  status: { type: String, enum: ['draft', 'confirmed', 'completed'], default: 'draft' }
+  status: { type: String, enum: ['draft', 'confirmed', 'completed'], default: 'draft' },
+  description: { type: String, default: '' }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Tour', tourSchema);

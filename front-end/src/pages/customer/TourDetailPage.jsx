@@ -5,6 +5,7 @@ import { ContactFloatButton } from '../../components/ContactFloatButton';
 import PeopleTab from './TourDetailTabs/PeopleTab';
 import VehiclesTab from './TourDetailTabs/VehiclesTab';
 import ScheduleTab from './TourDetailTabs/ScheduleTab';
+import AppLayout from '../../layouts/AppLayout';
 import {
   Typography, Box, Card, CardContent, Grid, Chip, Button,
   CircularProgress, Alert, Dialog, DialogTitle, DialogContent,
@@ -121,7 +122,14 @@ export default function TourDetailPage() {
   const [bottomNavValue, setBottomNavValue] = useState(0); // 0: Overview, 1: People, 2: Vehicles, 3: Schedule
 
   // Form states
-  const [tourForm, setTourForm] = useState({ name: '', start_time: '', end_time: '', max_capacity: '' });
+  const [tourForm, setTourForm] = useState({
+    name: '',
+    start_time: '',
+    end_time: '',
+    max_capacity: '',
+    status: 'draft',
+    description: ''
+  });
 
   // Passenger Form State
   const [passengerForm, setPassengerForm] = useState({
@@ -286,7 +294,9 @@ export default function TourDetailPage() {
       name: tour.name || '',
       start_time: formatForDateTimeLocal(tour.start_time),
       end_time: formatForDateTimeLocal(tour.end_time),
-      max_capacity: tour.max_capacity || ''
+      max_capacity: tour.max_capacity || '',
+      status: tour.status || 'draft',
+      description: tour.description || ''
     });
     setActionError('');
     setActionSuccess('');
@@ -303,7 +313,9 @@ export default function TourDetailPage() {
         name: tourForm.name,
         start_time: parseDateTimeLocalToISO(tourForm.start_time),
         end_time: parseDateTimeLocalToISO(tourForm.end_time),
-        max_capacity: Number(tourForm.max_capacity)
+        max_capacity: Number(tourForm.max_capacity),
+        status: tourForm.status,
+        description: tourForm.description
       });
       if (response.success) {
         setActionSuccess(t('msg_update_success'));
@@ -1331,135 +1343,136 @@ export default function TourDetailPage() {
   const isCreatorOrAdmin = isLeaderOrCreator || isAdminPath;
   const canEditItinerary = isLeaderOrCreator || isAdminPath;
 
+  const navigationItems = [
+    { label: t('tab_overview'), icon: <DashboardIcon />, value: 0 },
+    { label: t('tab_passengers'), icon: <GroupsIcon />, value: 1 },
+    { label: t('tab_vehicles'), icon: <DirectionsBusIcon />, value: 2 },
+    { label: t('tab_schedule'), icon: <AccessTimeFilledIcon />, value: 3 },
+  ];
+
+  const subtitleString = `${new Date(tour.start_time).toLocaleDateString(localeCode)} - ${new Date(tour.end_time).toLocaleDateString(localeCode)}`;
+
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default', overflow: 'hidden' }}>
-
-      {/* 1. COMPACT HEADER */}
-      <Box sx={{
-        bgcolor: 'primary.main', color: 'white', pt: 'calc(env(safe-area-inset-top) + 16px)', pb: 2, px: 2,
-        boxShadow: '0 4px 10px rgba(0,0,0,0.1)', zIndex: 10
-      }}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <IconButton onClick={handleBack} sx={{ color: 'white', p: 0.5 }}>
-            <ArrowBackIcon />
-          </IconButton>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h6" sx={{ fontWeight: 800, noWrap: true, lineHeight: 1.2 }}>
-              {tour.name}
-            </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.8, display: 'flex', alignItems: 'center' }}>
-              <EventIcon sx={{ fontSize: 14, mr: 0.5 }} />
-              {new Date(tour.start_time).toLocaleDateString(localeCode)} - {new Date(tour.end_time).toLocaleDateString(localeCode)}
-            </Typography>
-          </Box>
-          <Avatar sx={{ width: 32, height: 32, border: '2px solid white' }}>
-            {tour.created_by?.name ? tour.created_by.name[0] : 'A'}
-          </Avatar>
-        </Stack>
-      </Box>
-
+    <AppLayout
+      title={tour.name}
+      subtitle={
+        <span style={{ display: 'flex', alignItems: 'center' }}>
+          <EventIcon sx={{ fontSize: 14, mr: 0.5 }} />
+          {subtitleString}
+        </span>
+      }
+      onBack={handleBack}
+      headerExtra={
+        <Avatar sx={{ width: 32, height: 32, border: '2px solid white', display: { xs: 'none', md: 'flex' } }}>
+          {tour.created_by?.name ? tour.created_by.name[0] : 'A'}
+        </Avatar>
+      }
+      navigationItems={navigationItems}
+      activeNavigationValue={bottomNavValue}
+      onNavigationChange={setBottomNavValue}
+      disablePadding
+    >
       {isOfflineData && (
         <Alert severity="info" sx={{ borderRadius: 0 }}>
           {t('tour_offline_cache_warning')}
         </Alert>
       )}
 
-      {/* 2. MAIN SCROLLABLE CONTENT (TABS) */}
-      <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative', pb: 'calc(80px + env(safe-area-inset-bottom))' }}>
-        {bottomNavValue === 0 && (
-          <OverviewTab
-            tour={tour}
-            memberships={memberships}
-            vehicles={vehicles}
-            canEditItinerary={canEditItinerary}
-            onEditTour={isCreatorOrAdmin ? handleOpenEditTour : undefined}
-            onInviteLink={() => setInviteDialogOpen(true)}
-          />
-        )}
+      {/* Content tabs */}
+      {bottomNavValue === 0 && (
+        <OverviewTab
+          tour={tour}
+          memberships={memberships}
+          vehicles={vehicles}
+          canEditItinerary={canEditItinerary}
+          onEditTour={isCreatorOrAdmin ? handleOpenEditTour : undefined}
+          onInviteLink={() => setInviteDialogOpen(true)}
+        />
+      )}
 
-        {bottomNavValue === 1 && (
-          <PeopleTab
-            memberships={memberships}
-            vehicles={vehicles}
-            groups={groups}
-            loading={loading}
-            canEditItinerary={canEditItinerary}
-            currentUserId={currentUserId}
-            onEditPassenger={(member) => {
-              setPassengerForm({
-                user_id: member.user_id?._id || member.user_id || '',
-                name: member.user_id?.name || member.guest_info?.name || '',
-                phone: member.user_id?.phone || member.guest_info?.phone || member.phone || '',
-                birth_year: member.user_id?.birth_year || member.guest_info?.birth_year || member.birth_year || '',
-                gender: member.user_id?.gender !== undefined ? (member.user_id.gender ? 'male' : 'female') : (member.guest_info?.gender || member.gender || 'male'),
-                customer_type: member.customer_type,
-                role: member.role,
-                status: member.status || 'pending',
-                is_driver: member.is_driver,
-                group_id: member.group_id?._id || member.group_id || 'none'
-              });
-              setGroupNameInput('');
-              setNewGroupSelected(false);
-              setSelectedPassenger(member);
-              setEditPassengerOpen(true);
-            }}
-            onAssignVehicle={(member) => {
-              setAssignSeatForm({
-                membership_id: member._id,
-                vehicle_id: member.vehicle_id?._id || member.vehicle_id || ''
-              });
-              setAssignSeatOpen(true);
-            }}
-            onDeletePassenger={isCreatorOrAdmin ? handleDeletePassenger : undefined}
-            onLeavePassenger={handleOpenLeaveDialog}
-            onExportExcel={handleExportExcel}
-          />
-        )}
+      {bottomNavValue === 1 && (
+        <PeopleTab
+          memberships={memberships}
+          vehicles={vehicles}
+          groups={groups}
+          loading={loading}
+          canEditItinerary={canEditItinerary}
+          currentUserId={currentUserId}
+          onEditPassenger={(member) => {
+            setPassengerForm({
+              user_id: member.user_id?._id || member.user_id || '',
+              name: member.user_id?.name || member.guest_info?.name || '',
+              phone: member.user_id?.phone || member.guest_info?.phone || member.phone || '',
+              birth_year: member.user_id?.birth_year || member.guest_info?.birth_year || member.birth_year || '',
+              gender: member.user_id?.gender !== undefined ? (member.user_id.gender ? 'male' : 'female') : (member.guest_info?.gender || member.gender || 'male'),
+              customer_type: member.customer_type,
+              role: member.role,
+              status: member.status || 'pending',
+              is_driver: member.is_driver,
+              group_id: member.group_id?._id || member.group_id || 'none'
+            });
+            setGroupNameInput('');
+            setNewGroupSelected(false);
+            setSelectedPassenger(member);
+            setEditPassengerOpen(true);
+          }}
+          onAssignVehicle={(member) => {
+            setAssignSeatForm({
+              membership_id: member._id,
+              vehicle_id: member.vehicle_id?._id || member.vehicle_id || ''
+            });
+            setAssignSeatOpen(true);
+          }}
+          onDeletePassenger={isCreatorOrAdmin ? handleDeletePassenger : undefined}
+          onLeavePassenger={handleOpenLeaveDialog}
+          onExportExcel={handleExportExcel}
+          onAddPassenger={handleOpenAddPassenger}
+        />
+      )}
 
-        {bottomNavValue === 2 && (
-          <VehiclesTab
-            vehicles={vehicles}
-            memberships={memberships}
-            canEditItinerary={canEditItinerary}
-            onVehicleClick={(vehicle) => handleOpenViewVehiclePassengers(vehicle)}
-            onEditVehicle={(vehicle) => {
-              setVehicleForm({
-                license_plate: vehicle.license_plate,
-                plate_color: vehicle.plate_color,
-                seat_count: vehicle.seat_count,
-                driver_name: vehicle.driver_name,
-                driver_phone: vehicle.driver_phone
-              });
-              setSelectedVehicle(vehicle);
-              setEditVehicleOpen(true);
-            }}
-            onDeleteVehicle={isCreatorOrAdmin ? handleDeleteVehicle : undefined}
-          />
-        )}
+      {bottomNavValue === 2 && (
+        <VehiclesTab
+          vehicles={vehicles}
+          memberships={memberships}
+          canEditItinerary={canEditItinerary}
+          onVehicleClick={(vehicle) => handleOpenViewVehiclePassengers(vehicle)}
+          onEditVehicle={(vehicle) => {
+            setVehicleForm({
+              license_plate: vehicle.license_plate,
+              plate_color: vehicle.plate_color,
+              seat_count: vehicle.seat_count,
+              driver_name: vehicle.driver_name,
+              driver_phone: vehicle.driver_phone
+            });
+            setSelectedVehicle(vehicle);
+            setEditVehicleOpen(true);
+          }}
+          onDeleteVehicle={isCreatorOrAdmin ? handleDeleteVehicle : undefined}
+        />
+      )}
 
-        {bottomNavValue === 3 && (
-          <ScheduleTab
-            itineraries={itineraries}
-            tourAttendances={tourAttendances}
-            totalMembers={memberships.length}
-            canEditItinerary={canEditItinerary}
-            onItineraryClick={(itinerary) => handleOpenAttendance(itinerary)}
-            onEditItinerary={(itinerary) => {
-              setEditItineraryId(itinerary._id);
-              setItineraryForm({
-                date: new Date(itinerary.date),
-                location: itinerary.location,
-                activity: itinerary.activity
-              });
-              setItineraryModalOpen(true);
-            }}
-          />
-        )}
-      </Box>
+      {bottomNavValue === 3 && (
+        <ScheduleTab
+          itineraries={itineraries}
+          tourAttendances={tourAttendances}
+          totalMembers={memberships.length}
+          canEditItinerary={canEditItinerary}
+          onItineraryClick={(itinerary) => handleOpenAttendance(itinerary)}
+          onEditItinerary={(itinerary) => {
+            setEditItineraryId(itinerary._id);
+            setItineraryForm({
+              date: new Date(itinerary.date),
+              location: itinerary.location,
+              activity: itinerary.activity
+            });
+            setItineraryModalOpen(true);
+          }}
+        />
+      )}
 
-      {/* 3. DYNAMIC FAB (FLOATING ACTION BUTTON) */}
+      {/* Floating Action Buttons / SpeedDial */}
       {canEditItinerary && (
-        <Box sx={{ position: 'fixed', bottom: 'calc(80px + env(safe-area-inset-bottom))', right: 16, zIndex: 1000 }}>
+        <Box sx={{ position: 'fixed', bottom: { xs: 'calc(80px + env(safe-area-inset-bottom))', lg: 24 }, right: 24, zIndex: 1000 }}>
           {bottomNavValue === 1 && (
             <SpeedDial
               ariaLabel="People Actions"
@@ -1509,23 +1522,6 @@ export default function TourDetailPage() {
           )}
         </Box>
       )}
-
-      {/* 4. BOTTOM NAVIGATION */}
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20, bgcolor: 'background.paper', pb: 'env(safe-area-inset-bottom)' }} elevation={8}>
-        <BottomNavigation
-          showLabels
-          value={bottomNavValue}
-          onChange={(event, newValue) => {
-            setBottomNavValue(newValue);
-          }}
-          sx={{ height: 65, '& .MuiBottomNavigationAction-label': { fontWeight: 600 } }}
-        >
-          <BottomNavigationAction label={t('tab_overview')} icon={<DashboardIcon />} />
-          <BottomNavigationAction label={t('tab_passengers')} icon={<GroupsIcon />} />
-          <BottomNavigationAction label={t('tab_vehicles')} icon={<DirectionsBusIcon />} />
-          <BottomNavigationAction label={t('tab_schedule')} icon={<AccessTimeFilledIcon />} />
-        </BottomNavigation>
-      </Paper>
 
       {/* Modals are rendered below inside the same root Box */}
       {/* ========================================================================= */}
@@ -1854,6 +1850,28 @@ export default function TourDetailPage() {
               value={tourForm.max_capacity}
               onChange={(e) => setTourForm({ ...tourForm, max_capacity: e.target.value })}
               inputProps={{ min: 1 }}
+            />
+            <FormControl fullWidth margin="normal" required>
+              <InputLabel id="edit-tour-status-label">{t('tour_status') || 'Trạng thái'}</InputLabel>
+              <Select
+                labelId="edit-tour-status-label"
+                label={t('tour_status') || 'Trạng thái'}
+                value={tourForm.status || 'draft'}
+                onChange={(e) => setTourForm({ ...tourForm, status: e.target.value })}
+              >
+                <MenuItem value="draft">{t('status_draft') || 'Nháp'}</MenuItem>
+                <MenuItem value="confirmed">{t('status_confirmed') || 'Đã xác nhận'}</MenuItem>
+                <MenuItem value="completed">{t('status_completed') || 'Hoàn thành'}</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField
+              margin="normal"
+              fullWidth
+              label={t('tour_description') || 'Mô tả Tour'}
+              multiline
+              rows={3}
+              value={tourForm.description || ''}
+              onChange={(e) => setTourForm({ ...tourForm, description: e.target.value })}
             />
           </form>
         </DialogContent>
@@ -3326,6 +3344,6 @@ export default function TourDetailPage() {
         onImportSuccess={fetchTourData}
       />
       <ContactFloatButton />
-    </Box>
+    </AppLayout>
   );
 }

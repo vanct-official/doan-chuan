@@ -34,7 +34,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
   };
 
   return (
-    <Box sx={{ p: 2, pb: 10 }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, pb: { xs: 10, lg: 2 } }}>
       <Card
         sx={{
           mb: 3,
@@ -58,8 +58,21 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
               <Typography variant="caption" sx={{ opacity: 0.8, textTransform: 'uppercase', letterSpacing: 1, fontWeight: 'bold' }}>
                 {t('tour_leader')}
               </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.2, display: 'flex', alignItems: 'center' }}>
                 {tour.leader_id?.name || t('profile_unspecified')}
+                <Chip 
+                  label={tour.status === 'confirmed' ? t('status_confirmed') : tour.status === 'draft' ? t('status_draft') : tour.status === 'completed' ? t('status_completed') : tour.status} 
+                  size="small" 
+                  sx={{ 
+                    height: 20, 
+                    fontSize: '0.65rem', 
+                    fontWeight: 800, 
+                    color: 'white', 
+                    bgcolor: tour.status === 'confirmed' ? 'success.main' : tour.status === 'draft' ? 'warning.main' : tour.status === 'completed' ? 'info.main' : 'grey.500',
+                    ml: 1.5,
+                    px: 0.5
+                  }}
+                />
               </Typography>
               {tour.leader_id?.phone && (
                 <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', opacity: 0.9, mt: 0.5 }}>
@@ -110,12 +123,25 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
         </CardContent>
       </Card>
 
+      {tour.description && (
+        <Card elevation={0} sx={{ ...statCardSx, mb: 3 }}>
+          <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: 'text.primary' }}>
+              {t('tour_description') || 'Mô tả Tour'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+              {tour.description}
+            </Typography>
+          </CardContent>
+        </Card>
+      )}
+
       <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2, color: 'text.primary' }}>
         {t('tour_general_status')}
       </Typography>
 
-      <Grid container spacing={2}>
-        <Grid item xs={6}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <Card elevation={0} sx={statCardSx}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'primary.main' }}>
@@ -139,7 +165,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
           </Card>
         </Grid>
 
-        <Grid item xs={6}>
+        <Grid item xs={12} sm={6} md={4}>
           <Card elevation={0} sx={statCardSx}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, color: 'warning.main' }}>
@@ -158,7 +184,7 @@ export default function OverviewTab({ tour, memberships, vehicles, canEditItiner
           </Card>
         </Grid>
 
-        <Grid item xs={12}>
+        <Grid item xs={12} sm={12} md={4}>
           <Card elevation={0} sx={statCardSx}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1.5, alignItems: 'center' }}>

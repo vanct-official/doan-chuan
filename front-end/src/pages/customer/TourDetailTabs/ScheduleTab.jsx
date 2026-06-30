@@ -22,7 +22,8 @@ export default function ScheduleTab({
   const theme = useTheme();
 
   return (
-    <Box sx={{ p: 2, pb: 10, height: '100%', overflowY: 'auto' }}>
+    <Box sx={{ p: { xs: 2, md: 3 }, pb: { xs: 10, lg: 2 }, height: '100%', overflowY: 'auto' }}>
+      <Box sx={{ maxWidth: 'md', mx: 'auto', width: '100%' }}>
       {itineraries.length === 0 ? (
         <Typography textAlign="center" color="text.secondary" sx={{ mt: 4 }}>
           {t('tour_empty_schedule')}
@@ -116,6 +117,7 @@ export default function ScheduleTab({
           })}
         </Box>
       )}
+      </Box>
     </Box>
   );
 }

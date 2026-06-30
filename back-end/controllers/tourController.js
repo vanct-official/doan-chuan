@@ -4,13 +4,13 @@ const Vehicle = require('../models/Vehicle');
 
 exports.createTour = async (req, res) => {
   try {
-    const { name, start_time, end_time, deadline, max_capacity, leader_id } = req.body;
+    const { name, start_time, end_time, deadline, max_capacity, leader_id, description } = req.body;
     
     // Note: in a real app, 'created_by' would come from req.user representing the authenticated User/Admin
     const created_by = req.user ? req.user._id : leader_id;
 
     const tour = new Tour({
-      name, start_time, end_time, deadline, max_capacity, created_by, leader_id, status: 'draft'
+      name, start_time, end_time, deadline, max_capacity, created_by, leader_id, status: 'draft', description: description || ''
     });
     await tour.save();
 
@@ -85,7 +85,7 @@ exports.getTourById = async (req, res) => {
 
 exports.updateTour = async (req, res) => {
   try {
-    const { name, start_time, end_time, max_capacity, leader_id } = req.body;
+    const { name, start_time, end_time, max_capacity, leader_id, status, description } = req.body;
     const tourId = req.params.id;
 
     const tour = await Tour.findById(tourId);
@@ -103,6 +103,8 @@ exports.updateTour = async (req, res) => {
     tour.end_time = end_time || tour.end_time;
     tour.deadline = start_time || tour.deadline; // deadline matches start_time as required
     tour.max_capacity = max_capacity !== undefined ? Number(max_capacity) : tour.max_capacity;
+    if (status) tour.status = status;
+    if (description !== undefined) tour.description = description;
 
     if (leader_id && leader_id !== tour.leader_id.toString()) {
       // 1. Demote old leader(s) to member role in memberships list

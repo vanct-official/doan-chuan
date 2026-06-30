@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import {
   Box, Typography, TextField, InputAdornment, Avatar,
-  Chip, Skeleton, IconButton, Stack, Divider, Collapse,
-  Card, CardContent, Tooltip, useTheme, alpha,
+  Chip, Skeleton, IconButton, Stack, Divider, Collapse, Grid,
+  Card, CardContent, Tooltip, useTheme, alpha, useMediaQuery,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button,
 } from '@mui/material';
 import { customerTypeChip, groupPalette, memberCardSx } from '../tourDetailTheme';
 import SearchIcon from '@mui/icons-material/Search';
@@ -19,6 +20,7 @@ import ManIcon from '@mui/icons-material/Man';
 import WomanIcon from '@mui/icons-material/Woman';
 import { useTranslate } from '../../../hooks/useTranslate';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -107,7 +109,7 @@ function MemberCard({ member, vehicles, canEditItinerary, currentUserId, onEdit,
     <Card
       elevation={0}
       sx={{
-        mb: 1.5,
+        mb: 0,
         borderRadius: 3,
         border: '1px solid',
         transition: 'box-shadow 0.2s',
@@ -289,21 +291,22 @@ function GroupSection({ groupName, groupColor, members, vehicles, canEditItinera
       </Box>
 
       <Collapse in={open}>
-        <Box sx={{ pl: 0.5 }}>
+        <Grid container spacing={2} sx={{ pl: 0.5, pt: 1 }}>
           {members.map(member => (
-            <MemberCard
-              key={member._id}
-              member={member}
-              vehicles={vehicles}
-              canEditItinerary={canEditItinerary}
-              currentUserId={currentUserId}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onAssignVehicle={onAssignVehicle}
-              onLeave={onLeave}
-            />
+            <Grid item xs={12} sm={6} md={4} key={member._id}>
+              <MemberCard
+                member={member}
+                vehicles={vehicles}
+                canEditItinerary={canEditItinerary}
+                currentUserId={currentUserId}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onAssignVehicle={onAssignVehicle}
+                onLeave={onLeave}
+              />
+            </Grid>
           ))}
-        </Box>
+        </Grid>
       </Collapse>
     </Box>
   );
@@ -323,6 +326,7 @@ export default function PeopleTab({
   onDeletePassenger,
   onLeavePassenger,
   onExportExcel,
+  onAddPassenger,
 }) {
   const { t } = useTranslate(['common', 'tour']);
   const theme = useTheme();
@@ -397,8 +401,172 @@ export default function PeopleTab({
   const totalPending = memberships.filter(m => m.status === 'pending').length;
   const totalNoVehicle = memberships.filter(m => !m.vehicle_id && m.status !== 'left').length;
 
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
+
+  const renderPassengerTable = () => {
+    return (
+      <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 0, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+        <Table sx={{ minWidth: 650 }}>
+          <TableHead sx={{ bgcolor: 'action.hover' }}>
+            <TableRow>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_fullname') || 'Họ và tên'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_phone') || 'Số điện thoại'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_birth_year') || 'Năm sinh / Tuổi'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_gender') || 'Giới tính'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_role') || 'Vai trò'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_customer_type') || 'Loại khách'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_group') || 'Tên nhóm'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_vehicle') || 'Xe (Biển số)'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }}>{t('col_status') || 'Trạng thái'}</TableCell>
+              <TableCell sx={{ fontWeight: 'bold' }} align="right">{t('col_actions') || 'Thao tác'}</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {filteredMembers.map((member) => {
+              const name = getMemberName(member);
+              const phone = getMemberPhone(member);
+              const age = getMemberAge(member);
+              const birthYear = getMemberBirthYear(member);
+              const gender = getMemberGender(member);
+              const vehicle = vehicles.find(v => v._id === (member.vehicle_id?._id || member.vehicle_id));
+              const isLeft = member.status === 'left';
+              const isOwn = (member.user_id?._id || member.user_id) === currentUserId;
+
+              const roleInfo = member.role && member.role !== 'member' ? {
+                label: member.role === 'leader' ? t('tour_role_leader') :
+                       member.role === 'group_rep' ? t('tour_role_group_rep') :
+                       member.role === 'vehicle_rep' ? t('tour_role_vehicle_rep') :
+                       member.role === 'driver' ? t('tour_role_driver') : '',
+                color: member.role === 'leader' ? 'error' :
+                       member.role === 'group_rep' ? 'primary' :
+                       member.role === 'vehicle_rep' ? 'secondary' : 'info'
+              } : null;
+
+              const statusInfo = {
+                label: member.status === 'approved' ? t('tour_status_approved') :
+                       member.status === 'pending' ? t('tour_status_pending') :
+                       member.status === 'rejected' ? t('tour_status_rejected') :
+                       member.status === 'removed' ? t('tour_status_removed') :
+                       member.status === 'left' ? t('tour_status_left') : t('tour_status_pending'),
+                color: member.status === 'approved' ? 'success' :
+                       member.status === 'pending' ? 'warning' :
+                       member.status === 'rejected' ? 'error' :
+                       member.status === 'removed' ? 'error' : 'default'
+              };
+
+              const ctInfo = customerTypeChip(theme, member.customer_type);
+              const groupName = member.group_id?.name || (member.group_id ? (groups.find(g => g._id.toString() === member.group_id.toString())?.name || t('tour_group_suffix', { id: member.group_id.toString().slice(-4) })) : t('tour_no_group'));
+
+              return (
+                <TableRow key={member._id} hover sx={{ opacity: isLeft ? 0.6 : 1 }}>
+                  {/* Fullname */}
+                  <TableCell sx={{ fontWeight: 'bold' }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                      <Avatar sx={{ width: 32, height: 32, bgcolor: isLeft ? '#9ca3af' : member.role === 'leader' ? '#dc2626' : member.role === 'group_rep' ? '#2563eb' : '#6366f1', fontSize: '0.85rem', fontWeight: 'bold' }}>
+                        {getInitials(name)}
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {name || t('tour_unnamed')}
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+
+                  {/* Phone */}
+                  <TableCell>
+                    <Typography variant="body2">{phone || '—'}</Typography>
+                  </TableCell>
+
+                  {/* Birth Year / Age */}
+                  <TableCell>
+                    <Typography variant="body2">
+                      {birthYear && age ? `${birthYear} (${t('tour_years_old', { count: age })})` : birthYear || '—'}
+                    </Typography>
+                  </TableCell>
+
+                  {/* Gender */}
+                  <TableCell>
+                    <Typography variant="body2">
+                      {gender === 'male' ? t('profile_male') : gender === 'female' ? t('profile_female') : '—'}
+                    </Typography>
+                  </TableCell>
+
+                  {/* Role */}
+                  <TableCell>
+                    {roleInfo ? (
+                      <Chip label={roleInfo.label} size="small" color={roleInfo.color} sx={{ fontWeight: 700, fontSize: '0.72rem' }} />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary">—</Typography>
+                    )}
+                  </TableCell>
+
+                  {/* Customer Type */}
+                  <TableCell>
+                    <Chip label={ctInfo.label} size="small" sx={{ bgcolor: ctInfo.bgcolor, color: ctInfo.color, fontWeight: 600, fontSize: '0.72rem' }} />
+                  </TableCell>
+
+                  {/* Group */}
+                  <TableCell>
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>{groupName}</Typography>
+                  </TableCell>
+
+                  {/* Vehicle */}
+                  <TableCell>
+                    {vehicle ? (
+                      <Chip icon={<DirectionsCarIcon style={{ fontSize: 12 }} />} label={vehicle.license_plate} size="small" color="primary" variant="outlined" sx={{ fontSize: '0.72rem' }} />
+                    ) : !isLeft ? (
+                      <Chip label={t('seat_unassigned')} size="small" sx={{ bgcolor: alpha(theme.palette.warning.main, 0.15), color: 'warning.dark', fontWeight: 500, fontSize: '0.72rem' }} />
+                    ) : '—'}
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell>
+                    <Chip label={statusInfo.label} size="small" color={statusInfo.color} variant={member.status === 'approved' ? 'filled' : 'outlined'} sx={{ fontWeight: 600, fontSize: '0.72rem' }} />
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                      {canEditItinerary && onAssignVehicle && !isLeft && (
+                        <Tooltip title={t('btn_assign_seat')}>
+                          <IconButton size="small" onClick={() => onAssignVehicle(member)} sx={{ color: 'success.main' }}>
+                            <DirectionsCarFilledIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {onEditPassenger && (
+                        <Tooltip title={t('common.edit')}>
+                          <IconButton size="small" onClick={() => onEditPassenger(member)} sx={{ color: 'warning.main' }}>
+                            <EditIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {isOwn && !isLeft && onLeavePassenger && (
+                        <Tooltip title={t('tour_status_left')}>
+                          <IconButton size="small" onClick={() => onLeavePassenger(member)} sx={{ color: 'primary.main' }}>
+                            <ExitToAppIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canEditItinerary && onDeletePassenger && (
+                        <Tooltip title={t('tour_status_removed')}>
+                          <IconButton size="small" onClick={() => onDeletePassenger(member._id)} sx={{ color: 'error.main' }}>
+                            <DeleteIcon sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
+
   return (
-    <Box sx={{ pb: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ pb: { xs: 10, lg: 2 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Sticky header */}
       <Box sx={{
         p: 2, position: 'sticky', top: 0, zIndex: 10,
@@ -442,6 +610,42 @@ export default function PeopleTab({
               />
             ))}
           </Box>
+          {canEditItinerary && onAddPassenger && (
+            <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+              {/* Desktop/Tablet version: full text button */}
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<PersonAddIcon />}
+                onClick={onAddPassenger}
+                size="small"
+                sx={{
+                  display: { xs: 'none', sm: 'flex' },
+                  textTransform: 'none',
+                  fontWeight: 'bold',
+                  borderRadius: 0,
+                  px: 2,
+                  height: 34,
+                }}
+              >
+                {t('btn_add_passenger') || 'Thêm hành khách'}
+              </Button>
+              {/* Mobile version: icon button */}
+              <IconButton
+                color="primary"
+                onClick={onAddPassenger}
+                sx={{
+                  display: { xs: 'flex', sm: 'none' },
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
+                  borderRadius: 0,
+                  p: 0.75,
+                }}
+              >
+                <PersonAddIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+            </Stack>
+          )}
           {canEditItinerary && onExportExcel && (
             <Tooltip title={t('tour_export_excel')}>
               <IconButton
@@ -451,7 +655,7 @@ export default function PeopleTab({
                 sx={{
                   bgcolor: alpha(theme.palette.primary.main, 0.1),
                   '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.2) },
-                  borderRadius: 2,
+                  borderRadius: 0,
                   p: 0.75,
                   flexShrink: 0,
                 }}
@@ -481,6 +685,8 @@ export default function PeopleTab({
             <Typography fontSize="2.5rem">🔍</Typography>
             <Typography color="text.secondary" mt={1}>{t('tour_no_passengers_found')}</Typography>
           </Box>
+        ) : isDesktop ? (
+          renderPassengerTable()
         ) : (
           grouped.map(group => (
             <GroupSection

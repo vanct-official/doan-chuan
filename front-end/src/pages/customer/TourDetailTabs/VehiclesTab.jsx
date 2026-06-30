@@ -44,7 +44,7 @@ export default function VehiclesTab({
   });
 
   return (
-    <Box sx={{ pb: 10, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ pb: { xs: 10, lg: 2 }, height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ p: 2, position: 'sticky', top: 0, bgcolor: 'background.default', zIndex: 10 }}>
         <TextField
           fullWidth
@@ -101,7 +101,7 @@ export default function VehiclesTab({
             const rate = (occupancy / capacity) * 100;
 
             return (
-              <Grid item xs={12} sm={6} key={vehicle._id}>
+              <Grid item xs={12} sm={6} md={4} key={vehicle._id}>
                 <Card elevation={0} sx={{ 
                   borderRadius: 3, 
                   border: '1px solid', 
