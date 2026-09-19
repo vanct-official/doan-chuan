@@ -1,25 +1,19 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { 
   Typography, Box, Card, CardContent, Grid, Chip, 
   CircularProgress, Alert, Button, Dialog, DialogTitle, 
-  DialogContent, DialogActions, TextField 
+  DialogContent, DialogActions, TextField, InputAdornment, 
+  Tabs, Tab, Stack, alpha, useTheme
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
-import EventIcon from '@mui/icons-material/Event';
-import GroupIcon from '@mui/icons-material/Group';
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
-import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
+import AddIcon from '@mui/icons-material/AddRounded';
+import EventIcon from '@mui/icons-material/CalendarMonthRounded';
+import GroupIcon from '@mui/icons-material/GroupsRounded';
+import SearchIcon from '@mui/icons-material/SearchRounded';
+import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoffRounded';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForwardRounded';
+import LuggageIcon from '@mui/icons-material/LuggageRounded';
+import AccessTimeIcon from '@mui/icons-material/AccessTimeRounded';
 
-const gradients = [
-  'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-  'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-  'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
-  'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
-  'linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%)',
-  'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)',
-  'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
-  'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
-];
 import { useTranslate } from '../../hooks/useTranslate';
 import { useNavigate } from 'react-router-dom';
 import { tourService } from '../../services/tourService';
@@ -29,13 +23,29 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { MobileDateTimePicker } from '@mui/x-date-pickers/MobileDateTimePicker';
 
+// Luxury travel curated gradients
+const luxuryGradients = [
+  'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', // Ocean Azure
+  'linear-gradient(135deg, #0891b2 0%, #0e7490 100%)', // Deep Teal
+  'linear-gradient(135deg, #f97316 0%, #c2410c 100%)', // Sunset Tangerine
+  'linear-gradient(135deg, #059669 0%, #047857 100%)', // Mountain Emerald
+  'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)', // Royal Indigo
+  'linear-gradient(135deg, #d97706 0%, #b45309 100%)', // Warm Gold
+];
+
 export const ToursPage = () => {
   const { t, currentLanguage } = useTranslate(['common', 'tour']);
   const navigate = useNavigate();
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === 'dark';
+
   const [tours, setTours] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isOfflineData, setIsOfflineData] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
   const localeCode = currentLanguage === 'vi' ? 'vi-VN' : currentLanguage === 'ja' ? 'ja-JP' : 'en-US';
 
   // States for Create Tour Modal (for customers)
@@ -50,7 +60,7 @@ export const ToursPage = () => {
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
 
-  // Get currently logged-in user to show/hide the create tour button
+  // Get currently logged-in user
   const userStr = localStorage.getItem('user');
   const user = userStr ? JSON.parse(userStr) : null;
 
@@ -116,16 +126,16 @@ export const ToursPage = () => {
         name: tourForm.name,
         start_time: toUTC(tourForm.start_time),
         end_time: toUTC(tourForm.end_time),
-        deadline: toUTC(tourForm.start_time), // deadline is equal to start_time
+        deadline: toUTC(tourForm.start_time),
         max_capacity: Number(tourForm.max_capacity),
         leader_id: userId
       });
 
       setSubmitSuccess(t('tour_create_success'));
-      fetchTours(); // Reload tours list
+      fetchTours();
       setTimeout(() => {
         handleCloseModal();
-      }, 1500);
+      }, 1200);
     } catch (err) {
       setSubmitError(err.response?.data?.message || err.response?.data?.error || err.message || t('tour_create_error'));
     } finally {
@@ -133,185 +143,409 @@ export const ToursPage = () => {
     }
   };
 
+  const filteredTours = useMemo(() => {
+    return tours.filter((tour) => {
+      const matchesSearch = tour.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'confirmed') return tour.status === 'confirmed';
+      if (statusFilter === 'draft') return tour.status === 'draft';
+      return true;
+    });
+  }, [tours, searchQuery, statusFilter]);
+
   return (
-    <Box sx={{ mt: 2, mb: 6 }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+    <Box sx={{ mt: 1, mb: 8 }}>
+      {/* Top Header Banner */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: 2,
+          mb: 4,
+          p: { xs: 3, md: 4 },
+          borderRadius: 5,
+          bgcolor: isDarkMode ? 'rgba(17, 24, 39, 0.7)' : 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(16px)',
+          border: '1px solid',
+          borderColor: isDarkMode ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+          boxShadow: isDarkMode
+            ? '0 10px 30px -10px rgba(0, 0, 0, 0.4)'
+            : '0 10px 30px -10px rgba(15, 23, 42, 0.05)',
+        }}
+      >
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-0.5px' }}>
-            {t('menu_tours')}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5 }}>
-            {t('tours_subtitle')}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 0.5 }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: '-0.02em', color: 'text.primary' }}>
+              {t('menu_tours') || 'Chuyến Đi Của Bạn'}
+            </Typography>
+            <Chip
+              label={`${filteredTours.length} tour`}
+              size="small"
+              sx={{
+                fontWeight: 700,
+                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                color: 'primary.main',
+              }}
+            />
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            {t('tours_subtitle') || 'Quản lý lịch trình, sắp xếp đoàn xe và đồng hành cùng mọi chuyến đi'}
           </Typography>
         </Box>
+
         {user && (
           <Button 
             variant="contained" 
             color="primary" 
             startIcon={<AddIcon />} 
             onClick={handleOpenModal}
-            sx={{ py: 1.2, px: 3, borderRadius: 8, fontWeight: 'bold', boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)', display: { xs: 'none', sm: 'flex' } }}
+            sx={{
+              py: 1.3,
+              px: 3.5,
+              borderRadius: 9999,
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              whiteSpace: 'nowrap',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              boxShadow: '0 8px 20px -4px rgba(2, 132, 199, 0.35)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 24px -4px rgba(2, 132, 199, 0.5)',
+              }
+            }}
           >
-            {t('admin_tours_add')}
+            {t('admin_tours_add') || 'Tạo Tour Mới'}
           </Button>
         )}
       </Box>
 
+      {/* Search & Filter Toolbar */}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', md: 'center' },
+          gap: 2,
+          mb: 4,
+        }}
+      >
+        {/* Search Input */}
+        <TextField
+          placeholder="Tìm kiếm theo tên tour..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+              </InputAdornment>
+            ),
+          }}
+          sx={{
+            minWidth: { xs: '100%', md: 320 },
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 9999,
+              bgcolor: 'background.paper',
+            },
+          }}
+        />
+
+        {/* Filter Tabs */}
+        <Tabs
+          value={statusFilter}
+          onChange={(e, val) => setStatusFilter(val)}
+          sx={{
+            minHeight: 'auto',
+            bgcolor: isDarkMode ? 'rgba(30, 41, 59, 0.5)' : 'rgba(241, 245, 249, 0.8)',
+            p: 0.5,
+            borderRadius: 9999,
+            border: '1px solid',
+            borderColor: isDarkMode ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+            '& .MuiTabs-indicator': { display: 'none' },
+          }}
+        >
+          <Tab
+            value="all"
+            label="Tất cả"
+            sx={{
+              borderRadius: 9999,
+              minHeight: 'auto',
+              py: 0.7,
+              px: 2,
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: statusFilter === 'all' ? '#ffffff !important' : 'text.secondary',
+              bgcolor: statusFilter === 'all' ? 'primary.main' : 'transparent',
+              transition: 'all 0.2s ease',
+            }}
+          />
+          <Tab
+            value="confirmed"
+            label="Đã xác nhận"
+            sx={{
+              borderRadius: 9999,
+              minHeight: 'auto',
+              py: 0.7,
+              px: 2,
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: statusFilter === 'confirmed' ? '#ffffff !important' : 'text.secondary',
+              bgcolor: statusFilter === 'confirmed' ? 'success.main' : 'transparent',
+              transition: 'all 0.2s ease',
+            }}
+          />
+          <Tab
+            value="draft"
+            label="Bản nháp"
+            sx={{
+              borderRadius: 9999,
+              minHeight: 'auto',
+              py: 0.7,
+              px: 2,
+              fontWeight: 600,
+              fontSize: '0.85rem',
+              color: statusFilter === 'draft' ? '#ffffff !important' : 'text.secondary',
+              bgcolor: statusFilter === 'draft' ? 'warning.main' : 'transparent',
+              transition: 'all 0.2s ease',
+            }}
+          />
+        </Tabs>
+      </Box>
+
+      {/* Offline Alert */}
       {isOfflineData && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          {t('tours_offline_alert')}
+        <Alert severity="info" sx={{ mb: 3, borderRadius: 3 }}>
+          {t('tours_offline_alert') || 'Đang hiển thị dữ liệu lưu trong bộ nhớ máy (Offline mode)'}
         </Alert>
       )}
 
-      {user && (
-        <Button 
-          variant="contained" 
-          color="primary" 
-          startIcon={<AddIcon />} 
-          onClick={handleOpenModal}
-          fullWidth
-          sx={{ py: 1.5, mb: 4, borderRadius: 3, fontWeight: 'bold', display: { xs: 'flex', sm: 'none' } }}
-        >
-          {t('admin_tours_add')}
-        </Button>
-      )}
-
+      {/* Loading state */}
       {loading && (
-        <Box display="flex" justifyContent="center" my={5}>
-          <CircularProgress />
+        <Box display="flex" justifyContent="center" alignItems="center" my={8} flexDirection="column" gap={2}>
+          <CircularProgress size={44} thickness={4} />
+          <Typography variant="body2" color="text.secondary">Đang tải danh sách tour...</Typography>
         </Box>
       )}
-      {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+
+      {/* Error state */}
+      {error && <Alert severity="error" sx={{ mb: 3, borderRadius: 3 }}>{error}</Alert>}
       
-      {!loading && !error && tours.length === 0 && (
+      {/* Empty State */}
+      {!loading && !error && filteredTours.length === 0 && (
         <Box sx={{ 
           mt: 4, 
           py: 8,
-          px: 2,
+          px: 3,
           textAlign: 'center', 
           backgroundColor: 'background.paper',
-          borderRadius: 4,
-          border: '1px dashed',
-          borderColor: 'divider',
+          borderRadius: 6,
+          border: '2px dashed',
+          borderColor: isDarkMode ? 'rgba(51, 65, 85, 0.6)' : 'rgba(226, 232, 240, 0.8)',
+          maxWidth: 600,
+          mx: 'auto',
         }}>
-          <Typography variant="h1" mb={2}>🏖️</Typography>
-          {user ? (
-            <>
-              <Typography variant="h5" fontWeight="bold" mb={2} color="text.primary">
-                {t('tours_empty_title')}
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ maxWidth: 500, mx: 'auto', mb: 4 }}>
-                {t('tours_empty_desc', { phone: user.phone || t('profile_unspecified') })}
-              </Typography>
-              <Button 
-                variant="contained" 
-                color="primary" 
-                size="large"
-                startIcon={<AddIcon />} 
-                onClick={handleOpenModal}
-                sx={{ borderRadius: 8, px: 4, py: 1.5, fontWeight: 'bold', boxShadow: '0 4px 14px 0 rgba(0,118,255,0.39)' }}
-              >
-                {t('admin_tours_add')}
-              </Button>
-            </>
-          ) : (
-            <Typography variant="body1" color="text.secondary">
-              {t('admin_tours_none')}
-            </Typography>
+          <Box
+            sx={{
+              width: 72,
+              height: 72,
+              borderRadius: '50%',
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mx: 'auto',
+              mb: 2.5,
+            }}
+          >
+            <LuggageIcon sx={{ fontSize: 36, color: 'primary.main' }} />
+          </Box>
+          <Typography variant="h5" fontWeight="bold" mb={1} color="text.primary">
+            {searchQuery ? 'Không tìm thấy tour phù hợp' : t('tours_empty_title') || 'Chưa có chuyến đi nào'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5, maxWidth: 440, mx: 'auto', lineHeight: 1.6 }}>
+            {searchQuery 
+              ? `Không có kết quả nào khớp với từ khóa "${searchQuery}". Hãy thử tìm kiếm với từ khóa khác.`
+              : 'Hãy bắt đầu tạo tour du lịch đầu tiên để sắp xếp lộ trình và mời các thành viên tham gia!'}
+          </Typography>
+          {user && !searchQuery && (
+            <Button 
+              variant="contained" 
+              color="primary" 
+              size="large"
+              startIcon={<AddIcon />} 
+              onClick={handleOpenModal}
+              sx={{ borderRadius: 9999, px: 4, py: 1.4, fontWeight: 'bold' }}
+            >
+              {t('admin_tours_add') || 'Tạo Chuyến Đi Đầu Tiên'}
+            </Button>
           )}
         </Box>
       )}
 
-      <Grid container spacing={3}>
-        {tours.map((tour, index) => (
-          <Grid item xs={12} sm={6} md={4} key={tour._id}>
-            <Card 
-              elevation={0}
-              onClick={() => navigate(`/tours/${tour._id}`)}
-              sx={{ 
-                height: '100%', 
-                borderRadius: 4, 
-                cursor: 'pointer',
-                overflow: 'hidden',
-                border: '1px solid',
-                borderColor: 'divider',
-                display: 'flex',
-                flexDirection: 'column',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-                '&:hover': { 
-                  transform: 'translateY(-6px)', 
-                  boxShadow: '0 12px 24px -10px rgba(0,0,0,0.15)',
-                  borderColor: 'primary.main'
-                } 
-              }}
-            >
-              <Box 
+      {/* Tours Grid */}
+      <Grid container spacing={3.5}>
+        {filteredTours.map((tour, index) => {
+          const cardGradient = luxuryGradients[index % luxuryGradients.length];
+          const isConfirmed = tour.status === 'confirmed';
+          const isDraft = tour.status === 'draft';
+
+          return (
+            <Grid item xs={12} sm={6} md={4} key={tour._id}>
+              <Card 
+                elevation={0}
+                onClick={() => navigate(`/tours/${tour._id}`)}
                 sx={{ 
-                  height: 100, 
-                  background: gradients[index % gradients.length],
-                  position: 'relative'
+                  height: '100%', 
+                  borderRadius: 5, 
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  border: '1px solid',
+                  borderColor: isDarkMode ? 'rgba(51, 65, 85, 0.5)' : 'rgba(226, 232, 240, 0.8)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  transition: 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)', 
+                  bgcolor: 'background.paper',
+                  '&:hover': { 
+                    transform: 'translateY(-8px)', 
+                    boxShadow: isDarkMode 
+                      ? '0 20px 40px -10px rgba(0,0,0,0.6)' 
+                      : '0 20px 40px -10px rgba(2, 132, 199, 0.18)',
+                    borderColor: 'primary.main',
+                  } 
                 }}
               >
-                <Chip 
-                  label={tour.status === 'confirmed' ? t('status_confirmed') : tour.status === 'draft' ? t('status_draft') : tour.status} 
-                  color={tour.status === 'confirmed' ? 'success' : tour.status === 'draft' ? 'warning' : 'default'} 
-                  size="small" 
+                {/* Header Gradient Thumbnail */}
+                <Box 
                   sx={{ 
-                    position: 'absolute', 
-                    top: 16, 
-                    right: 16, 
-                    fontWeight: 'bold',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                  }}
-                />
-              </Box>
-
-              <CardContent sx={{ p: 3, pt: 2, display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h6" component="h2" sx={{ fontWeight: 800, mb: 2.5, lineHeight: 1.3 }}>
-                    {tour.name}
-                  </Typography>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, color: 'text.secondary' }}>
-                    <EventIcon fontSize="small" sx={{ mr: 1.5, opacity: 0.7 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {new Date(tour.start_time).toLocaleDateString(localeCode)}
-                    </Typography>
-                    <ArrowRightAltIcon fontSize="small" sx={{ mx: 1, opacity: 0.5 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {new Date(tour.end_time).toLocaleDateString(localeCode)}
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, color: 'text.secondary' }}>
-                    <GroupIcon fontSize="small" sx={{ mr: 1.5, opacity: 0.7 }} />
-                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                      {t('tour_capacity_max', { count: tour.max_capacity })}
-                    </Typography>
-                  </Box>
-                </Box>
-                <Button 
-                  variant="contained" 
-                  color="primary"
-                  size="medium" 
-                  fullWidth 
-                  endIcon={<FlightTakeoffIcon />}
-                  sx={{ 
-                    borderRadius: 2, 
-                    textTransform: 'none', 
-                    fontWeight: 'bold',
-                    boxShadow: 'none',
-                    bgcolor: 'primary.light',
-                    color: 'primary.contrastText',
-                    '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }
+                    height: 120, 
+                    background: cardGradient,
+                    position: 'relative',
+                    p: 2.5,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    overflow: 'hidden',
                   }}
                 >
-                  {t('view_detail')}
-                </Button>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
+                  {/* Decorative wave circles */}
+                  <Box
+                    sx={{
+                      position: 'absolute',
+                      top: -20,
+                      right: -20,
+                      width: 100,
+                      height: 100,
+                      borderRadius: '50%',
+                      background: 'rgba(255, 255, 255, 0.1)',
+                    }}
+                  />
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, zIndex: 1 }}>
+                    <Box
+                      sx={{
+                        p: 0.8,
+                        borderRadius: 2,
+                        bgcolor: 'rgba(255, 255, 255, 0.2)',
+                        backdropFilter: 'blur(8px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#ffffff',
+                      }}
+                    >
+                      <LuggageIcon fontSize="small" />
+                    </Box>
+                  </Box>
+
+                  <Chip 
+                    label={isConfirmed ? 'Đã xác nhận' : isDraft ? 'Bản nháp' : tour.status || 'Hoạt động'} 
+                    size="small" 
+                    sx={{ 
+                      fontWeight: 800,
+                      fontSize: '0.725rem',
+                      backdropFilter: 'blur(10px)',
+                      bgcolor: isConfirmed 
+                        ? 'rgba(16, 185, 129, 0.9)' 
+                        : isDraft 
+                          ? 'rgba(245, 158, 11, 0.9)' 
+                          : 'rgba(255, 255, 255, 0.25)',
+                      color: '#ffffff',
+                      zIndex: 1,
+                    }}
+                  />
+                </Box>
+
+                {/* Card Content */}
+                <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', flexGrow: 1, justifyContent: 'space-between' }}>
+                  <Box>
+                    <Typography 
+                      variant="h6" 
+                      component="h2" 
+                      sx={{ 
+                        fontWeight: 800, 
+                        mb: 2, 
+                        lineHeight: 1.35, 
+                        fontSize: '1.15rem',
+                        color: 'text.primary',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {tour.name}
+                    </Typography>
+
+                    {/* Dates */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, color: 'text.secondary' }}>
+                      <EventIcon sx={{ mr: 1.2, fontSize: 18, color: 'primary.main' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        {new Date(tour.start_time).toLocaleDateString(localeCode)} — {new Date(tour.end_time).toLocaleDateString(localeCode)}
+                      </Typography>
+                    </Box>
+
+                    {/* Capacity */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, color: 'text.secondary' }}>
+                      <GroupIcon sx={{ mr: 1.2, fontSize: 18, color: 'secondary.main' }} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                        {t('tour_capacity_max', { count: tour.max_capacity }) || `Sức chứa: ${tour.max_capacity} hành khách`}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* View detail button */}
+                  <Button 
+                    variant="outlined" 
+                    color="primary"
+                    size="medium" 
+                    fullWidth 
+                    endIcon={<ArrowForwardIcon />}
+                    sx={{ 
+                      borderRadius: 9999, 
+                      fontWeight: 700,
+                      py: 1,
+                      fontSize: '0.875rem',
+                      borderColor: isDarkMode ? 'rgba(51, 65, 85, 0.7)' : 'rgba(226, 232, 240, 0.9)',
+                      '&:hover': { 
+                        bgcolor: 'primary.main',
+                        color: '#ffffff',
+                        borderColor: 'primary.main',
+                      }
+                    }}
+                  >
+                    {t('view_detail') || 'Xem Chi Tiết Đoàn'}
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          );
+        })}
       </Grid>
 
       {/* Create Tour Modal (For customers) */}
@@ -319,15 +553,19 @@ export const ToursPage = () => {
         open={openModal} 
         onClose={handleCloseModal}
         PaperProps={{
-          sx: { borderRadius: 3, p: 2, maxWidth: 500, width: '100%' }
+          sx: { borderRadius: 5, p: { xs: 1.5, sm: 2.5 }, maxWidth: 520, width: '100%' }
         }}
       >
-        <DialogTitle sx={{ fontWeight: 'bold', pb: 1, color: 'primary.main' }}>
-          {t('admin_tours_add_modal_title')}
+        <DialogTitle sx={{ fontWeight: 800, pb: 1, color: 'text.primary', fontSize: '1.35rem' }}>
+          {t('admin_tours_add_modal_title') || 'Tạo Chuyến Đi Mới'}
         </DialogTitle>
         <DialogContent>
-          {submitError && <Alert severity="error" sx={{ mb: 2, mt: 1 }}>{submitError}</Alert>}
-          {submitSuccess && <Alert severity="success" sx={{ mb: 2, mt: 1 }}>{submitSuccess}</Alert>}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Nhập thông tin cơ bản cho đoàn. Sau khi tạo, bạn có thể phân chia xe và gửi link mời cho thành viên.
+          </Typography>
+
+          {submitError && <Alert severity="error" sx={{ mb: 2, borderRadius: 2.5 }}>{submitError}</Alert>}
+          {submitSuccess && <Alert severity="success" sx={{ mb: 2, borderRadius: 2.5 }}>{submitSuccess}</Alert>}
 
           <form id="createTourForm" onSubmit={handleFormSubmit}>
             <TextField
@@ -335,14 +573,15 @@ export const ToursPage = () => {
               required
               fullWidth
               name="name"
-              label={t('tour_name')}
+              label={t('tour_name') || 'Tên chuyến đi'}
+              placeholder="VD: Khám Phá Đà Nẵng - Hội An 3N2Đ"
               value={tourForm.name}
               onChange={handleFormChange}
               autoFocus
             />
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <MobileDateTimePicker
-                label={t('tour_start_time')}
+                label={t('tour_start_time') || 'Ngày khởi hành'}
                 value={tourForm.start_time}
                 onChange={(newValue) => setTourForm({ ...tourForm, start_time: newValue })}
                 format="DD/MM/YYYY HH:mm"
@@ -351,7 +590,7 @@ export const ToursPage = () => {
                 }}
               />
               <MobileDateTimePicker
-                label={t('tour_end_time')}
+                label={t('tour_end_time') || 'Ngày kết thúc'}
                 value={tourForm.end_time}
                 onChange={(newValue) => setTourForm({ ...tourForm, end_time: newValue })}
                 format="DD/MM/YYYY HH:mm"
@@ -365,16 +604,17 @@ export const ToursPage = () => {
               required
               fullWidth
               name="max_capacity"
-              label={t('tour_capacity')}
+              label={t('tour_capacity') || 'Sức chứa tối đa (người)'}
               type="number"
+              placeholder="VD: 45"
               value={tourForm.max_capacity}
               onChange={handleFormChange}
               inputProps={{ min: 1 }}
             />
           </form>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={handleCloseModal} color="inherit" variant="outlined" disabled={submitting}>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={handleCloseModal} color="inherit" variant="outlined" disabled={submitting} sx={{ borderRadius: 9999 }}>
             {t('cancel')}
           </Button>
           <Button 
@@ -383,8 +623,9 @@ export const ToursPage = () => {
             variant="contained" 
             color="primary" 
             disabled={submitting}
+            sx={{ borderRadius: 9999, px: 3.5 }}
           >
-            {submitting ? '...' : t('admin_tours_add_modal_btn')}
+            {submitting ? 'Đang tạo...' : t('admin_tours_add_modal_btn') || 'Tạo Chuyến Đi'}
           </Button>
         </DialogActions>
       </Dialog>

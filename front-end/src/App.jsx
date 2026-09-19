@@ -73,8 +73,9 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-        <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 12, flexDirection: 'column', gap: 2 }}>
+        <CircularProgress size={44} thickness={4} />
+        <Typography variant="body2" color="text.secondary">Đang tải dữ liệu bảng điều khiển...</Typography>
       </Box>
     );
   }
@@ -84,50 +85,66 @@ const AdminDashboard = () => {
       title: 'Tổng số Tour',
       value: stats?.totalTours || 0,
       sub: `${stats?.activeTours || 0} tour đang/sắp chạy`,
-      icon: <TourIcon sx={{ fontSize: 28 }} />,
-      color: '#4f46e5',
-      bgcolor: 'rgba(79, 70, 229, 0.08)'
+      icon: <TourIcon sx={{ fontSize: 26 }} />,
+      color: '#0284c7',
+      bgGradient: 'linear-gradient(135deg, rgba(2, 132, 199, 0.12) 0%, rgba(6, 182, 212, 0.04) 100%)',
+      borderColor: 'rgba(2, 132, 199, 0.25)',
+      trend: 'Đang hoạt động'
     },
     {
-      title: 'Tổng người dùng',
+      title: 'Người dùng hệ thống',
       value: stats?.totalUsers || 0,
-      sub: 'Tài khoản đăng ký hệ thống',
-      icon: <PeopleIcon sx={{ fontSize: 28 }} />,
-      color: '#06b6d4',
-      bgcolor: 'rgba(6, 182, 212, 0.08)'
+      sub: 'Tài khoản đăng ký',
+      icon: <PeopleIcon sx={{ fontSize: 26 }} />,
+      color: '#8b5cf6',
+      bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(168, 85, 247, 0.04) 100%)',
+      borderColor: 'rgba(139, 92, 246, 0.25)',
+      trend: 'Toàn hệ thống'
     },
     {
       title: 'Hành khách duyệt',
       value: stats?.totalPassengers || 0,
-      sub: 'Tổng số lượt khách tham gia các tour',
-      icon: <AirlineSeatReclineNormalIcon sx={{ fontSize: 28 }} />,
+      sub: 'Lượt khách tham gia các tour',
+      icon: <AirlineSeatReclineNormalIcon sx={{ fontSize: 26 }} />,
       color: '#10b981',
-      bgcolor: 'rgba(16, 185, 129, 0.08)'
+      bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.04) 100%)',
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+      trend: 'Lượt tham quan'
     },
     {
-      title: 'Số phương tiện xe',
+      title: 'Đội xe điều phối',
       value: stats?.totalVehicles || 0,
-      sub: 'Xe được điều động phục vụ đoàn',
-      icon: <DirectionsCarIcon sx={{ fontSize: 28 }} />,
-      color: '#f59e0b',
-      bgcolor: 'rgba(245, 158, 11, 0.08)'
+      sub: 'Phương tiện sẵn sàng phục vụ',
+      icon: <DirectionsCarIcon sx={{ fontSize: 26 }} />,
+      color: '#f97316',
+      bgGradient: 'linear-gradient(135deg, rgba(249, 115, 22, 0.12) 0%, rgba(245, 158, 11, 0.04) 100%)',
+      borderColor: 'rgba(249, 115, 22, 0.25)',
+      trend: 'Đoàn xe'
     }
   ];
 
   return (
-    <Box sx={{ p: 1 }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 4 }}>
+    <Box sx={{ p: 0.5 }}>
+      {/* Dashboard Top Header */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 4 }}>
         <Box>
-          <Typography variant="h4" sx={{ fontWeight: 800, color: 'text.primary', mb: 0.5 }}>
-            {t('common.navigation.dashboard')}
+          <Typography variant="h4" sx={{ fontWeight: 900, color: 'text.primary', letterSpacing: '-0.02em', mb: 0.5 }}>
+            {t('common.navigation.dashboard') || 'Tổng Quan Hệ Thống'}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Thống kê tổng quan và quản lý hoạt động hệ thống
+            Báo cáo số liệu thời gian thực và quản lý các hoạt động điều phối tour
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 2, py: 1, bgcolor: 'background.paper', borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
-          <ShowChartIcon color="primary" />
-          <Typography variant="caption" sx={{ fontWeight: 'bold' }}>Hệ thống đang hoạt động</Typography>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<TourIcon />}
+            onClick={() => navigate('/admin/tours')}
+            sx={{ borderRadius: 9999, px: 3, fontWeight: 700 }}
+          >
+            Quản Lý Tour
+          </Button>
         </Box>
       </Stack>
 
@@ -137,66 +154,107 @@ const AdminDashboard = () => {
       <Grid container spacing={3} sx={{ mb: 5 }}>
         {statCards.map((c, i) => (
           <Grid item xs={12} sm={6} md={3} key={i}>
-            <Card variant="outlined" sx={{ borderRadius: 4, p: 2.5, height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', borderLeft: `5px solid ${c.color}` }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <Card 
+              elevation={0}
+              sx={{ 
+                borderRadius: 5, 
+                p: 3, 
+                height: '100%', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                position: 'relative',
+                background: c.bgGradient,
+                border: `1px solid ${c.borderColor}`,
+                boxShadow: '0 8px 24px -6px rgba(0,0,0,0.06)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 16px 32px -8px rgba(0,0,0,0.12)',
+                  borderColor: c.color,
+                }
+              }}
+            >
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {c.title}
                 </Typography>
-                <Avatar sx={{ bgcolor: c.bgcolor, color: c.color, width: 46, height: 46 }}>
+                <Avatar sx={{ bgcolor: alpha(c.color, 0.15), color: c.color, width: 44, height: 44, borderRadius: 3 }}>
                   {c.icon}
                 </Avatar>
               </Box>
-              <Typography variant="h4" sx={{ fontWeight: 900, mb: 1, color: 'text.primary' }}>
+              <Typography variant="h3" sx={{ fontWeight: 900, mb: 1, color: 'text.primary', letterSpacing: '-0.02em' }}>
                 {c.value}
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 'auto', display: 'block' }}>
-                {c.sub}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 'auto' }}>
+                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                  {c.sub}
+                </Typography>
+                <Chip 
+                  label={c.trend} 
+                  size="small" 
+                  sx={{ 
+                    height: 22, 
+                    fontSize: '0.7rem', 
+                    fontWeight: 700, 
+                    bgcolor: alpha(c.color, 0.12), 
+                    color: c.color 
+                  }} 
+                />
+              </Box>
             </Card>
           </Grid>
         ))}
       </Grid>
 
       {/* Recent Tours Table */}
-      <Card variant="outlined" sx={{ borderRadius: 4, overflow: 'hidden' }}>
+      <Card 
+        elevation={0}
+        sx={{ 
+          borderRadius: 5, 
+          overflow: 'hidden',
+          border: '1px solid',
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
         <CardHeader
-          title="Các Tour du lịch gần đây"
-          titleTypographyProps={{ fontWeight: 800, fontSize: '1.15rem' }}
+          title="Các Chuyến Tour Gần Đây"
+          titleTypographyProps={{ fontWeight: 800, fontSize: '1.15rem', color: 'text.primary' }}
           action={
             <Button 
               size="small" 
               onClick={() => navigate('/admin/tours')} 
               endIcon={<ArrowForwardIcon />}
-              sx={{ textTransform: 'none', fontWeight: 'bold' }}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 9999, px: 2 }}
             >
-              Xem tất cả
+              Xem tất cả tour
             </Button>
           }
           sx={{ borderBottom: '1px solid', borderColor: 'divider', px: 3, py: 2 }}
         />
-        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+        <TableContainer sx={{ boxShadow: 'none' }}>
           <Table size="medium">
-            <TableHead sx={{ bgcolor: 'action.hover' }}>
+            <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary', pl: 3 }}>Tên Tour</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Trưởng đoàn</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thời gian khởi hành</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }}>Thời gian kết thúc</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary' }} align="center">Sức chứa</TableCell>
-                <TableCell sx={{ fontWeight: 'bold', color: 'text.secondary', pr: 3 }} align="center">Thao tác</TableCell>
+                <TableCell sx={{ pl: 3 }}>Tên Tour</TableCell>
+                <TableCell>Trưởng đoàn</TableCell>
+                <TableCell>Khởi hành</TableCell>
+                <TableCell>Kết thúc</TableCell>
+                <TableCell align="center">Sức chứa</TableCell>
+                <TableCell align="center" sx={{ pr: 3 }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {!stats?.recentTours || stats.recentTours.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary', fontStyle: 'italic' }}>
-                    Chưa có tour nào được tạo.
+                    Chưa có tour nào được tạo trong hệ thống.
                   </TableCell>
                 </TableRow>
               ) : (
                 stats.recentTours.map((t) => (
-                  <TableRow key={t._id} hover>
-                    <TableCell sx={{ fontWeight: 'bold', pl: 3 }}>{t.name}</TableCell>
+                  <TableRow key={t._id} hover sx={{ transition: 'background-color 0.2s' }}>
+                    <TableCell sx={{ fontWeight: 700, pl: 3, color: 'text.primary' }}>{t.name}</TableCell>
                     <TableCell>{t.leader_id?.name || 'Chưa chỉ định'}</TableCell>
                     <TableCell>
                       {new Date(t.start_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
@@ -204,13 +262,15 @@ const AdminDashboard = () => {
                     <TableCell>
                       {new Date(t.end_time).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}
                     </TableCell>
-                    <TableCell align="center">{t.max_capacity} khách</TableCell>
+                    <TableCell align="center">
+                      <Chip label={`${t.max_capacity} khách`} size="small" sx={{ fontWeight: 600 }} />
+                    </TableCell>
                     <TableCell align="center" sx={{ pr: 3 }}>
                       <Button
                         size="small"
                         variant="outlined"
                         onClick={() => navigate(`/admin/tours/${t._id}`)}
-                        sx={{ textTransform: 'none', borderRadius: 1.5, fontWeight: 'bold' }}
+                        sx={{ borderRadius: 9999, fontWeight: 700, px: 2 }}
                       >
                         Chi tiết
                       </Button>

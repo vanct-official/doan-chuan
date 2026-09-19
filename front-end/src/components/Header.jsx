@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Box,
@@ -14,15 +14,26 @@ import {
   List,
   ListItem,
   ListItemButton,
+  ListItemIcon,
   ListItemText,
   Menu,
   MenuItem,
   Toolbar,
   Typography,
+  Avatar,
+  Chip,
+  alpha,
+  useTheme,
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
+import HomeIcon from '@mui/icons-material/HomeRounded';
+import ExploreIcon from '@mui/icons-material/ExploreRounded';
+import DashboardIcon from '@mui/icons-material/DashboardRounded';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlineRounded';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useColorMode } from '../theme/ThemeContext';
 import { InstallPwaButton } from './pwa/InstallPwaButton';
 import { LanguageSwitcher } from './i18n/LanguageSwitcher';
@@ -31,6 +42,10 @@ import { useTranslate } from '../hooks/useTranslate';
 export const Header = ({ onMenuClick }) => {
   const { t } = useTranslate(['common', 'auth']);
   const { mode, toggleColorMode } = useColorMode();
+  const theme = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [userAnchorEl, setUserAnchorEl] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
@@ -39,7 +54,7 @@ export const Header = ({ onMenuClick }) => {
     return userStr ? JSON.parse(userStr) : null;
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleStorageChange = () => {
       const userStr = localStorage.getItem('user');
       setUser(userStr ? JSON.parse(userStr) : null);
@@ -55,170 +70,488 @@ export const Header = ({ onMenuClick }) => {
   }, []);
 
   const handleNavigate = (path) => {
-    window.location.href = path;
+    navigate(path);
   };
 
   const handleConfirmLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    navigate('/login');
   };
 
   const handleUserMenuClose = () => {
     setUserAnchorEl(null);
   };
 
-  const drawer = (
-    <Box onClick={() => setMobileOpen(false)} sx={{ textAlign: 'center', width: 250, pt: 'env(safe-area-inset-top)' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 2, bgcolor: '#4f46e5' }}>
-        <img
-          src="/doanchuan_vanct.png"
-          alt="Đoàn Chuẩn Logo"
-          style={{ height: 40, cursor: 'pointer', objectFit: 'contain' }}
-          onClick={() => handleNavigate('/')}
-        />
-      </Box>
-      <Divider />
-      <Box sx={{ px: 2, py: 1.5 }}>
-        <InstallPwaButton variant="contained" size="small" />
-      </Box>
-      <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate('/')}>
-            <ListItemText primary={t('common.navigation.home')} />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => handleNavigate('/tours')}>
-            <ListItemText primary={t('common.navigation.tours')} />
-          </ListItemButton>
-        </ListItem>
+  const isNavActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
 
-        {user ? (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigate('/profile')}>
+  const navItems = [
+    { label: t('common.navigation.home'), path: '/', icon: <HomeIcon fontSize="small" /> },
+    { label: t('common.navigation.tours'), path: '/tours', icon: <ExploreIcon fontSize="small" /> },
+    ...(user?.role === 'admin'
+      ? [{ label: t('common.navigation.dashboard'), path: '/admin', icon: <DashboardIcon fontSize="small" /> }]
+      : []),
+  ];
+
+  const drawer = (
+    <Box
+      onClick={() => setMobileOpen(false)}
+      sx={{
+        width: 280,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        pt: 'calc(12px + env(safe-area-inset-top))',
+        pb: 3,
+        bgcolor: mode === 'light' ? '#ffffff' : '#0f172a',
+      }}
+    >
+      {/* Drawer Brand */}
+      <Box sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Box
+          sx={{
+            width: 44,
+            height: 44,
+            borderRadius: 3,
+            p: 0.5,
+            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+          }}
+        >
+          <img
+            src="/doanchuan_vanct.png"
+            alt="Đoàn Chuẩn"
+            style={{ height: 26, objectFit: 'contain' }}
+          />
+        </Box>
+        <Box>
+          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+            Đoàn Chuẩn
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Luxury Travel System
+          </Typography>
+        </Box>
+      </Box>
+
+      <Divider sx={{ my: 1 }} />
+
+      <Box sx={{ px: 2, py: 1 }}>
+        <InstallPwaButton variant="contained" size="small" fullWidth />
+      </Box>
+
+      {/* Navigation List */}
+      <List sx={{ px: 2, flexGrow: 1 }}>
+        {navItems.map((item) => {
+          const active = isNavActive(item.path);
+          return (
+            <ListItem key={item.path} disablePadding sx={{ mb: 0.8 }}>
+              <ListItemButton
+                onClick={() => handleNavigate(item.path)}
+                selected={active}
+                sx={{
+                  borderRadius: 3,
+                  py: 1.2,
+                  px: 2,
+                  fontWeight: active ? 700 : 500,
+                  bgcolor: active
+                    ? alpha(theme.palette.primary.main, mode === 'light' ? 0.1 : 0.2)
+                    : 'transparent',
+                  color: active ? 'primary.main' : 'text.primary',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.08),
+                  },
+                }}
+              >
+                <ListItemIcon sx={{ color: active ? 'primary.main' : 'text.secondary', minWidth: 36 }}>
+                  {item.icon}
+                </ListItemIcon>
                 <ListItemText
-                  primary={t('profile')}
-                  secondary={t('common.messages.hello', { name: user.name })}
+                  primary={item.label}
+                  primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: active ? 700 : 500 }}
                 />
               </ListItemButton>
             </ListItem>
-            {user.role === 'admin' && (
-              <ListItem disablePadding>
-                <ListItemButton onClick={() => handleNavigate('/admin')}>
-                  <ListItemText primary={t('common.navigation.admin')} />
-                </ListItemButton>
-              </ListItem>
-            )}
-            <Divider sx={{ my: 1 }} />
+          );
+        })}
+
+        <Divider sx={{ my: 2 }} />
+
+        {user ? (
+          <>
+            <ListItem disablePadding sx={{ mb: 0.8 }}>
+              <ListItemButton
+                onClick={() => handleNavigate('/profile')}
+                sx={{ borderRadius: 3, py: 1.2, px: 2 }}
+              >
+                <ListItemIcon sx={{ minWidth: 36, color: 'primary.main' }}>
+                  <PersonOutlineIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t('profile')}
+                  secondary={user.name}
+                  primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: 600 }}
+                />
+              </ListItemButton>
+            </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => setLogoutDialogOpen(true)} sx={{ color: 'error.main' }}>
-                <ListItemText primary={t('common.actions.logout')} />
+              <ListItemButton
+                onClick={() => setLogoutDialogOpen(true)}
+                sx={{ borderRadius: 3, py: 1.2, px: 2, color: 'error.main' }}
+              >
+                <ListItemIcon sx={{ minWidth: 36, color: 'error.main' }}>
+                  <LogoutRoundedIcon />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t('common.actions.logout')}
+                  primaryTypographyProps={{ fontSize: '0.95rem', fontWeight: 600 }}
+                />
               </ListItemButton>
             </ListItem>
           </>
         ) : (
-          <>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigate('/login')}>
-                <ListItemText primary={t('auth.login.title')} />
-              </ListItemButton>
-            </ListItem>
-            <ListItem disablePadding>
-              <ListItemButton onClick={() => handleNavigate('/register')}>
-                <ListItemText primary={t('auth.register.title')} />
-              </ListItemButton>
-            </ListItem>
-          </>
+          <Box sx={{ px: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Button
+              variant="contained"
+              fullWidth
+              onClick={() => handleNavigate('/login')}
+              sx={{ borderRadius: 2.5 }}
+            >
+              {t('auth.login.title')}
+            </Button>
+            <Button
+              variant="outlined"
+              fullWidth
+              onClick={() => handleNavigate('/register')}
+              sx={{ borderRadius: 2.5 }}
+            >
+              {t('auth.register.title')}
+            </Button>
+          </Box>
         )}
       </List>
     </Box>
   );
 
   return (
-    <AppBar position="sticky" sx={{ pt: 'env(safe-area-inset-top)' }}>
-      <Toolbar>
-        <IconButton
-          edge="start"
-          color="inherit"
-          aria-label="menu"
-          onClick={onMenuClick || (() => setMobileOpen(true))}
-          sx={{ mr: 2, display: { sm: 'none' } }}
-        >
-          <MenuIcon />
-        </IconButton>
+    <AppBar
+      position="sticky"
+      elevation={0}
+      sx={{
+        pt: 'env(safe-area-inset-top)',
+        bgcolor: mode === 'light' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(9, 13, 22, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid',
+        borderColor: mode === 'light' ? 'rgba(226, 232, 240, 0.8)' : 'rgba(51, 65, 85, 0.4)',
+        color: 'text.primary',
+        transition: 'all 0.3s ease',
+      }}
+    >
+      <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 4 }, py: 0.5 }}>
+        {/* Left: Mobile Menu & Brand Logo */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <IconButton
+            edge="start"
+            color="inherit"
+            aria-label="menu"
+            onClick={onMenuClick || (() => setMobileOpen(true))}
+            sx={{
+              display: { sm: 'none' },
+              borderRadius: 2.5,
+              p: 1,
+              bgcolor: alpha(theme.palette.text.primary, 0.04),
+              '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08) },
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
 
-        <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center' }}>
-          <img
-            src="/doanchuan_vanct.png"
-            alt="Đoàn Chuẩn Logo"
-            style={{ height: 36, cursor: 'pointer', objectFit: 'contain' }}
+          <Box
             onClick={() => handleNavigate('/')}
-          />
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1.5,
+              cursor: 'pointer',
+              py: 0.5,
+              transition: 'transform 0.2s ease',
+              '&:hover': { transform: 'scale(1.02)' },
+            }}
+          >
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 3,
+                p: 0.5,
+                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.28)',
+              }}
+            >
+              <img
+                src="/doanchuan_vanct.png"
+                alt="Đoàn Chuẩn"
+                style={{ height: 26, objectFit: 'contain' }}
+              />
+            </Box>
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Typography
+                variant="h6"
+                component="span"
+                sx={{
+                  fontWeight: 800,
+                  fontSize: '1.15rem',
+                  letterSpacing: '-0.02em',
+                  background: mode === 'light'
+                    ? 'linear-gradient(135deg, #0f172a 0%, #0284c7 100%)'
+                    : 'linear-gradient(135deg, #f8fafc 0%, #38bdf8 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                }}
+              >
+                ĐOÀN CHUẨN
+              </Typography>
+              <Chip
+                label="TRAVEL"
+                size="small"
+                sx={{
+                  ml: 1,
+                  height: 18,
+                  fontSize: '0.65rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.08em',
+                  bgcolor: alpha(theme.palette.secondary.main, 0.12),
+                  color: 'secondary.main',
+                }}
+              />
+            </Box>
+          </Box>
         </Box>
 
-        <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
-          <InstallPwaButton variant="outlined" size="small" />
-          <Button color="inherit" onClick={() => handleNavigate('/')}>{t('common.navigation.home')}</Button>
-          <Button color="inherit" onClick={() => handleNavigate('/tours')}>{t('common.navigation.tours')}</Button>
-          {user?.role === 'admin' && (
-            <Button color="inherit" onClick={() => handleNavigate('/admin')}>{t('common.navigation.dashboard')}</Button>
-          )}
+        {/* Center: Desktop Navigation Links (Pill Style) */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'flex' },
+            alignItems: 'center',
+            gap: 1,
+            p: 0.6,
+            borderRadius: 9999,
+            bgcolor: mode === 'light' ? 'rgba(241, 245, 249, 0.7)' : 'rgba(30, 41, 59, 0.5)',
+            border: '1px solid',
+            borderColor: mode === 'light' ? 'rgba(226, 232, 240, 0.6)' : 'rgba(51, 65, 85, 0.4)',
+          }}
+        >
+          {navItems.map((item) => {
+            const active = isNavActive(item.path);
+            return (
+              <Button
+                key={item.path}
+                onClick={() => handleNavigate(item.path)}
+                startIcon={item.icon}
+                sx={{
+                  borderRadius: 9999,
+                  px: 2.2,
+                  py: 0.7,
+                  fontSize: '0.875rem',
+                  fontWeight: active ? 700 : 500,
+                  color: active ? '#ffffff' : 'text.secondary',
+                  background: active
+                    ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
+                    : 'transparent',
+                  boxShadow: active ? '0 4px 12px rgba(2, 132, 199, 0.3)' : 'none',
+                  '&:hover': {
+                    background: active
+                      ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
+                      : alpha(theme.palette.primary.main, 0.08),
+                    color: active ? '#ffffff' : 'primary.main',
+                    transform: 'none',
+                  },
+                }}
+              >
+                {item.label}
+              </Button>
+            );
+          })}
+        </Box>
 
+        {/* Right: Actions, Install PWA, Lang, DarkMode, User Profile */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.8, sm: 1.2 } }}>
+          <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <InstallPwaButton variant="outlined" size="small" />
+          </Box>
+
+          <LanguageSwitcher />
+
+          <IconButton
+            onClick={toggleColorMode}
+            aria-label={t('toggle_dark_mode')}
+            sx={{
+              p: 1,
+              borderRadius: 2.5,
+              bgcolor: alpha(theme.palette.text.primary, 0.04),
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                bgcolor: alpha(theme.palette.text.primary, 0.08),
+                transform: 'rotate(15deg)',
+              },
+            }}
+          >
+            {mode === 'dark' ? (
+              <Brightness7Icon sx={{ color: '#f59e0b', fontSize: 20 }} />
+            ) : (
+              <Brightness4Icon sx={{ color: '#0284c7', fontSize: 20 }} />
+            )}
+          </IconButton>
+
+          {/* User Profile or Login/Register */}
           {user ? (
             <>
               <Button
-                color="inherit"
                 onClick={(event) => setUserAnchorEl(event.currentTarget)}
-                sx={{ ml: 1, textTransform: 'none', fontWeight: 'bold' }}
+                sx={{
+                  borderRadius: 9999,
+                  p: 0.5,
+                  pr: { xs: 0.5, sm: 1.8 },
+                  border: '1px solid',
+                  borderColor: mode === 'light' ? 'rgba(226, 232, 240, 0.9)' : 'rgba(51, 65, 85, 0.6)',
+                  bgcolor: mode === 'light' ? '#ffffff' : '#1e293b',
+                  '&:hover': {
+                    bgcolor: alpha(theme.palette.primary.main, 0.05),
+                    borderColor: 'primary.main',
+                    transform: 'none',
+                  },
+                }}
               >
-                {t('common.messages.hello', { name: user.name })}
+                <Avatar
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #0284c7 0%, #f97316 100%)',
+                    color: '#ffffff',
+                    mr: { xs: 0, sm: 1 },
+                  }}
+                >
+                  {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </Avatar>
+                <Box sx={{ display: { xs: 'none', sm: 'flex' }, flexDirection: 'column', alignItems: 'flex-start' }}>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      fontWeight: 700,
+                      color: 'text.primary',
+                      maxWidth: 110,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {user.name}
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontSize: '0.65rem', color: 'primary.main', fontWeight: 600 }}>
+                    {user.role === 'admin' ? 'Quản trị viên' : 'Thành viên'}
+                  </Typography>
+                </Box>
               </Button>
+
               <Menu
                 anchorEl={userAnchorEl}
                 open={Boolean(userAnchorEl)}
                 onClose={handleUserMenuClose}
+                transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+                anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+                PaperProps={{
+                  sx: {
+                    mt: 1.2,
+                    minWidth: 200,
+                    p: 1,
+                    borderRadius: 3,
+                    boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
+                    border: '1px solid',
+                    borderColor: mode === 'light' ? 'rgba(226, 232, 240, 0.8)' : 'rgba(51, 65, 85, 0.5)',
+                  },
+                }}
               >
-                <MenuItem onClick={() => { handleUserMenuClose(); handleNavigate('/profile'); }}>
-                  {t('profile')}
+                <MenuItem
+                  onClick={() => {
+                    handleUserMenuClose();
+                    handleNavigate('/profile');
+                  }}
+                  sx={{ borderRadius: 2, py: 1, gap: 1.5 }}
+                >
+                  <PersonOutlineIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {t('profile')}
+                  </Typography>
                 </MenuItem>
+
                 {user.role === 'admin' && (
-                  <MenuItem onClick={() => { handleUserMenuClose(); handleNavigate('/admin'); }}>
-                    {t('common.navigation.admin')}
+                  <MenuItem
+                    onClick={() => {
+                      handleUserMenuClose();
+                      handleNavigate('/admin');
+                    }}
+                    sx={{ borderRadius: 2, py: 1, gap: 1.5 }}
+                  >
+                    <DashboardIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {t('common.navigation.admin')}
+                    </Typography>
                   </MenuItem>
                 )}
+
+                <Divider sx={{ my: 0.8 }} />
+
                 <MenuItem
-                  onClick={() => { handleUserMenuClose(); setLogoutDialogOpen(true); }}
-                  sx={{ color: 'error.main' }}
+                  onClick={() => {
+                    handleUserMenuClose();
+                    setLogoutDialogOpen(true);
+                  }}
+                  sx={{ borderRadius: 2, py: 1, gap: 1.5, color: 'error.main' }}
                 >
-                  {t('common.actions.logout')}
+                  <LogoutRoundedIcon fontSize="small" />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {t('common.actions.logout')}
+                  </Typography>
                 </MenuItem>
               </Menu>
             </>
           ) : (
-            <>
-              <Button color="inherit" onClick={() => handleNavigate('/login')}>{t('auth.login.title')}</Button>
+            <Box sx={{ display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
               <Button
-                variant="outlined"
+                variant="text"
                 color="inherit"
+                onClick={() => handleNavigate('/login')}
+                sx={{ borderRadius: 2.5, fontWeight: 600 }}
+              >
+                {t('auth.login.title')}
+              </Button>
+              <Button
+                variant="contained"
+                color="primary"
                 onClick={() => handleNavigate('/register')}
-                sx={{ ml: 1 }}
+                sx={{ borderRadius: 2.5, px: 2.5 }}
               >
                 {t('auth.register.title')}
               </Button>
-            </>
+            </Box>
           )}
         </Box>
-
-        <LanguageSwitcher />
-
-        <IconButton color="inherit" onClick={toggleColorMode} aria-label={t('toggle_dark_mode')}>
-          {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-        </IconButton>
       </Toolbar>
 
+      {/* Mobile Drawer */}
       <Drawer
         variant="temporary"
         open={mobileOpen}
@@ -226,19 +559,21 @@ export const Header = ({ onMenuClick }) => {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', sm: 'none' },
-          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 250 },
+          '& .MuiDrawer-paper': { boxSizing: 'border-box', width: 280, border: 'none' },
         }}
       >
         {drawer}
       </Drawer>
 
+      {/* Logout Confirmation Dialog */}
       <Dialog
         open={logoutDialogOpen}
         onClose={() => setLogoutDialogOpen(false)}
         aria-labelledby="logout-dialog-title"
         aria-describedby="logout-dialog-description"
+        PaperProps={{ sx: { p: 1, borderRadius: 4 } }}
       >
-        <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 'bold' }}>
+        <DialogTitle id="logout-dialog-title" sx={{ fontWeight: 800 }}>
           {t('common.logout.title')}
         </DialogTitle>
         <DialogContent>
@@ -246,11 +581,11 @@ export const Header = ({ onMenuClick }) => {
             {t('common.logout.description')}
           </DialogContentText>
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit" variant="outlined">
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit" variant="outlined" sx={{ borderRadius: 2.5 }}>
             {t('common.actions.cancel')}
           </Button>
-          <Button onClick={handleConfirmLogout} color="error" variant="contained" autoFocus>
+          <Button onClick={handleConfirmLogout} color="error" variant="contained" sx={{ borderRadius: 2.5 }} autoFocus>
             {t('common.actions.logout')}
           </Button>
         </DialogActions>

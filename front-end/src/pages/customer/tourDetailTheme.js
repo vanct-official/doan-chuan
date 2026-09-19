@@ -3,14 +3,14 @@ import { alpha } from '@mui/material/styles';
 /** Gradient hero card (Overview, modal header) */
 export function heroGradient(theme) {
   return theme.palette.mode === 'dark'
-    ? 'linear-gradient(135deg, #312e81 0%, #4f46e5 100%)'
-    : 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)';
+    ? 'linear-gradient(135deg, #0c4a6e 0%, #0369a1 50%, #0284c7 100%)'
+    : 'linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #0ea5e9 100%)';
 }
 
 export function accentGradient(theme) {
   return theme.palette.mode === 'dark'
-    ? 'linear-gradient(135deg, #5b21b6 0%, #4f46e5 100%)'
-    : 'linear-gradient(135deg, #7c3aed 0%, #6366f1 100%)';
+    ? 'linear-gradient(135deg, #9a3412 0%, #ea580c 50%, #f97316 100%)'
+    : 'linear-gradient(135deg, #ea580c 0%, #f97316 50%, #fb923c 100%)';
 }
 
 /** Attendance member row */

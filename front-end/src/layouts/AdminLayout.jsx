@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { AppBar, Box, IconButton, Toolbar, Typography, useMediaQuery, useTheme } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { AppBar, Box, IconButton, Toolbar, Typography, useMediaQuery, useTheme, Chip, alpha } from '@mui/material';
+import MenuIcon from '@mui/icons-material/MenuRounded';
+import MenuOpenIcon from '@mui/icons-material/MenuOpenRounded';
+import Brightness4Icon from '@mui/icons-material/Brightness4Rounded';
+import Brightness7Icon from '@mui/icons-material/Brightness7Rounded';
+import HomeIcon from '@mui/icons-material/HomeRounded';
 import { Sidebar } from '../components/Sidebar';
 import { useColorMode } from '../theme/ThemeContext';
 import { LanguageSwitcher } from '../components/i18n/LanguageSwitcher';
@@ -20,6 +22,7 @@ export const AdminLayout = ({ children }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const location = useLocation();
+  const navigate = useNavigate();
 
   const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
@@ -39,65 +42,98 @@ export const AdminLayout = ({ children }) => {
     return <Navigate to="/" replace />;
   }
 
-  const currentDrawerWidth = collapsed ? 72 : 240;
+  const currentDrawerWidth = collapsed ? 76 : 250;
+
+  const getPageTitle = () => {
+    if (location.pathname === '/admin') return 'Bảng Điều Khiển Tổng Quan';
+    if (location.pathname.startsWith('/admin/tours')) return 'Quản Lý Danh Sách Tour';
+    if (location.pathname.startsWith('/admin/users')) return 'Quản Lý Người Dùng';
+    if (location.pathname.startsWith('/admin/profile')) return 'Hồ Sơ Quản Trị Viên';
+    if (location.pathname.startsWith('/admin/settings')) return 'Cài Đặt Hệ Thống';
+    return 'Admin Console';
+  };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
       <Sidebar mobileOpen={mobileOpen} handleDrawerToggle={handleDrawerToggle} collapsed={collapsed} />
 
-      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', width: '100%', overflowX: 'hidden' }}>
         <AppBar
           position="fixed"
+          elevation={0}
           sx={{
             width: { sm: `calc(100% - ${currentDrawerWidth}px)` },
             ml: { sm: `${currentDrawerWidth}px` },
-            backgroundColor: (theme) =>
-              theme.palette.mode === 'light'
-                ? 'rgba(255, 255, 255, 0.8)'
-                : 'rgba(15, 23, 42, 0.8)',
-            backdropFilter: 'blur(12px)',
+            backgroundColor: mode === 'light' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(9, 13, 22, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
             color: 'text.primary',
-            boxShadow: 'none',
             borderBottom: '1px solid',
-            borderColor: 'divider',
+            borderColor: mode === 'light' ? 'rgba(226, 232, 240, 0.8)' : 'rgba(51, 65, 85, 0.4)',
             pt: 'env(safe-area-inset-top)',
-            transition: (theme) => theme.transitions.create(['margin', 'width'], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.enteringScreen,
-            }),
+            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), margin 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
         >
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              edge="start"
-              onClick={isMobile ? handleDrawerToggle : toggleCollapsed}
-              sx={{ mr: 2 }}
-              aria-label="menu"
-            >
-              <MenuIcon />
-            </IconButton>
-            <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box 
-                onClick={() => window.location.href = '/admin'}
-                sx={{ bgcolor: '#4f46e5', p: 0.5, borderRadius: 1.5, display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+          <Toolbar sx={{ justifyContent: 'space-between', px: { xs: 2, md: 3 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <IconButton
+                color="inherit"
+                edge="start"
+                onClick={isMobile ? handleDrawerToggle : toggleCollapsed}
+                sx={{
+                  borderRadius: 2.5,
+                  p: 1,
+                  bgcolor: alpha(theme.palette.text.primary, 0.04),
+                  '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08) },
+                }}
+                aria-label="menu"
               >
-                <img
-                  src="/doanchuan_vanct.png"
-                  alt="Đoàn Chuẩn Logo"
-                  style={{ height: 28, objectFit: 'contain' }}
-                />
+                {collapsed ? <MenuIcon /> : <MenuOpenIcon />}
+              </IconButton>
+
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', lineHeight: 1.2 }}>
+                  {getPageTitle()}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  Hệ thống quản trị Đoàn Chuẩn
+                </Typography>
               </Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-                Admin Portal
-              </Typography>
             </Box>
 
-            <LanguageSwitcher />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <IconButton
+                onClick={() => navigate('/')}
+                title="Về trang chủ khách hàng"
+                sx={{
+                  borderRadius: 2.5,
+                  p: 1,
+                  bgcolor: alpha(theme.palette.text.primary, 0.04),
+                  '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08) },
+                }}
+              >
+                <HomeIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+              </IconButton>
 
-            <IconButton color="inherit" onClick={toggleColorMode} aria-label={t('toggle_dark_mode')}>
-              {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-            </IconButton>
+              <LanguageSwitcher />
+
+              <IconButton
+                onClick={toggleColorMode}
+                aria-label={t('toggle_dark_mode')}
+                sx={{
+                  borderRadius: 2.5,
+                  p: 1,
+                  bgcolor: alpha(theme.palette.text.primary, 0.04),
+                  '&:hover': { bgcolor: alpha(theme.palette.text.primary, 0.08) },
+                }}
+              >
+                {mode === 'dark' ? (
+                  <Brightness7Icon sx={{ color: '#f59e0b', fontSize: 20 }} />
+                ) : (
+                  <Brightness4Icon sx={{ color: '#0284c7', fontSize: 20 }} />
+                )}
+              </IconButton>
+            </Box>
           </Toolbar>
         </AppBar>
 
@@ -105,10 +141,11 @@ export const AdminLayout = ({ children }) => {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
+            p: { xs: 2, sm: 3, md: 4 },
             display: 'flex',
             flexDirection: 'column',
             minHeight: '100vh',
+            width: '100%',
           }}
         >
           <Box sx={{ pt: 'env(safe-area-inset-top)' }}>
