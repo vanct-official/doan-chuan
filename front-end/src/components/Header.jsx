@@ -38,6 +38,7 @@ import { useColorMode } from '../theme/ThemeContext';
 import { InstallPwaButton } from './pwa/InstallPwaButton';
 import { LanguageSwitcher } from './i18n/LanguageSwitcher';
 import { useTranslate } from '../hooks/useTranslate';
+import { BrandLogo } from './BrandLogo';
 
 export const Header = ({ onMenuClick }) => {
   const { t } = useTranslate(['common', 'auth']);
@@ -110,34 +111,16 @@ export const Header = ({ onMenuClick }) => {
       }}
     >
       {/* Drawer Brand */}
-      <Box sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Box
-          sx={{
-            width: 44,
-            height: 44,
-            borderRadius: 3,
-            p: 0.5,
-            background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+      <Box sx={{ px: 2.5, py: 2 }}>
+        <BrandLogo
+          size={40}
+          showText={true}
+          subtitle="Luxury Travel System"
+          onClick={() => {
+            setMobileOpen(false);
+            handleNavigate('/');
           }}
-        >
-          <img
-            src="/doanchuan_vanct.png"
-            alt="Đoàn Chuẩn"
-            style={{ height: 26, objectFit: 'contain' }}
-          />
-        </Box>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
-            Đoàn Chuẩn
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Luxury Travel System
-          </Typography>
-        </Box>
+        />
       </Box>
 
       <Divider sx={{ my: 1 }} />
@@ -273,69 +256,14 @@ export const Header = ({ onMenuClick }) => {
             <MenuIcon />
           </IconButton>
 
-          <Box
+          <BrandLogo
+            size={38}
+            showText={true}
+            showBadge={true}
+            badgeText="TRAVEL"
+            badgeColor="secondary"
             onClick={() => handleNavigate('/')}
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              cursor: 'pointer',
-              py: 0.5,
-              transition: 'transform 0.2s ease',
-              '&:hover': { transform: 'scale(1.02)' },
-            }}
-          >
-            <Box
-              sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 3,
-                p: 0.5,
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.28)',
-              }}
-            >
-              <img
-                src="/doanchuan_vanct.png"
-                alt="Đoàn Chuẩn"
-                style={{ height: 26, objectFit: 'contain' }}
-              />
-            </Box>
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography
-                variant="h6"
-                component="span"
-                sx={{
-                  fontWeight: 800,
-                  fontSize: '1.15rem',
-                  letterSpacing: '-0.02em',
-                  background: mode === 'light'
-                    ? 'linear-gradient(135deg, #0f172a 0%, #0284c7 100%)'
-                    : 'linear-gradient(135deg, #f8fafc 0%, #38bdf8 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}
-              >
-                ĐOÀN CHUẨN
-              </Typography>
-              <Chip
-                label="TRAVEL"
-                size="small"
-                sx={{
-                  ml: 1,
-                  height: 18,
-                  fontSize: '0.65rem',
-                  fontWeight: 800,
-                  letterSpacing: '0.08em',
-                  bgcolor: alpha(theme.palette.secondary.main, 0.12),
-                  color: 'secondary.main',
-                }}
-              />
-            </Box>
-          </Box>
+          />
         </Box>
 
         {/* Center: Desktop Navigation Links (Pill Style) */}

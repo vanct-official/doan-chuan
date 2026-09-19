@@ -13,6 +13,7 @@ import SettingsIcon from '@mui/icons-material/SettingsRounded';
 import ArrowBackIcon from '@mui/icons-material/ArrowBackRounded';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router-dom';
+import { BrandLogo } from './BrandLogo';
 
 export const Sidebar = ({ mobileOpen, handleDrawerToggle, collapsed = false }) => {
   const { t } = useTranslation();
@@ -55,62 +56,23 @@ export const Sidebar = ({ mobileOpen, handleDrawerToggle, collapsed = false }) =
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', pt: 'calc(8px + env(safe-area-inset-top))' }}>
       {/* Brand Header */}
-      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', px: 2.5, py: 2 }}>
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', px: isSidebarCollapsed ? 1 : 2.5, py: 2 }}>
         {isSidebarCollapsed ? (
-          <Box 
+          <BrandLogo
+            size={36}
+            showText={false}
             onClick={() => window.location.href = '/admin'}
-            sx={{ 
-              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)', 
-              p: 0.8, 
-              borderRadius: 3, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              width: 40, 
-              height: 40, 
-              cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)'
-            }}
-          >
-            <img
-              src="/doanchuan_vanct.png"
-              alt="Logo"
-              style={{ height: 24, width: 24, objectFit: 'contain' }}
-            />
-          </Box>
+          />
         ) : (
-          <Box 
+          <BrandLogo
+            size={38}
+            showText={true}
+            showBadge={true}
+            badgeText="ADMIN"
+            badgeColor="primary"
+            subtitle="ADMIN CONSOLE"
             onClick={() => window.location.href = '/admin'}
-            sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
-          >
-            <Box
-              sx={{
-                background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                p: 0.8,
-                borderRadius: 2.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 38,
-                height: 38,
-                boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
-              }}
-            >
-              <img
-                src="/doanchuan_vanct.png"
-                alt="Đoàn Chuẩn Logo"
-                style={{ height: 22, objectFit: 'contain' }}
-              />
-            </Box>
-            <Box>
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.02em' }}>
-                Đoàn Chuẩn
-              </Typography>
-              <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 700, fontSize: '0.65rem', letterSpacing: '0.05em' }}>
-                ADMIN CONSOLE
-              </Typography>
-            </Box>
-          </Box>
+          />
         )}
       </Toolbar>
       

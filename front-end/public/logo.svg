@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <!-- Background Gradient: Azure to Deep Ocean -->
+    <linearGradient id="dcBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="60%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#075985"/>
+    </linearGradient>
+
+    <!-- Pin Gradient: Crisp bright white to subtle ice cyan -->
+    <linearGradient id="dcPinGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f0f9ff"/>
+    </linearGradient>
+
+    <!-- Accent Sunset Orange Gradient -->
+    <linearGradient id="dcAccentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+
+    <!-- Drop Shadow for Pin -->
+    <filter id="dcShadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#0c4a6e" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base Container -->
+  <rect width="120" height="120" rx="32" fill="url(#dcBgGrad)"/>
+
+  <!-- Top Glass Sheen -->
+  <path d="M12 36 C12 20 22 12 40 12 L80 12 C98 12 108 20 108 36 C80 44 40 44 12 36 Z" fill="#ffffff" opacity="0.12"/>
+
+  <!-- Dynamic Road / Journey Arc (Representing Tour Convoy) -->
+  <path d="M 28 92 C 48 98 72 98 92 92" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>
+  <!-- Destination Milestone (Orange Sunset Accent) -->
+  <circle cx="86" cy="91" r="5" fill="url(#dcAccentGrad)"/>
+  <circle cx="86" cy="91" r="2.2" fill="#ffffff"/>
+
+  <!-- Main Tour Pin Icon with Drop Shadow -->
+  <g filter="url(#dcShadow)">
+    <!-- Pin Body -->
+    <path d="M60 22 C43.43 22 30 35.43 30 52 C30 71 54 86 58.2 88.5 C59.3 89.2 60.7 89.2 61.8 88.5 C66 86 90 71 90 52 C90 35.43 76.57 22 60 22 Z" fill="url(#dcPinGrad)"/>
+    
+    <!-- Inner Pin Core / Compass Ring -->
+    <circle cx="60" cy="50" r="11" fill="url(#dcBgGrad)"/>
+    <circle cx="60" cy="50" r="5" fill="url(#dcAccentGrad)"/>
+  </g>
+</svg>

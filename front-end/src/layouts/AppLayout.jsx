@@ -12,6 +12,7 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import { useColorMode } from '../theme/ThemeContext';
 import { LanguageSwitcher } from '../components/i18n/LanguageSwitcher';
 import { useTranslate } from '../hooks/useTranslate';
+import { BrandLogo } from '../components/BrandLogo';
 
 const drawerWidth = 260;
 
@@ -36,23 +37,17 @@ export default function AppLayout({
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Brand logo header */}
       <Box 
-        onClick={() => window.location.href = '/'}
         sx={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 1.5, 
-          p: 3, 
+          p: 2.5, 
           borderBottom: '1px solid', 
           borderColor: 'divider',
-          cursor: 'pointer'
         }}
       >
-        <Box sx={{ bgcolor: '#4f46e5', p: 0.5, borderRadius: 0, display: 'flex', alignItems: 'center' }}>
-          <img src="/doanchuan_vanct.png" alt="Logo" style={{ height: 32, objectFit: 'contain' }} />
-        </Box>
-        <Typography variant="h6" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: '-0.5px' }}>
-          Đoàn Chuẩn
-        </Typography>
+        <BrandLogo
+          size={38}
+          showText={true}
+          onClick={() => window.location.href = '/'}
+        />
       </Box>
 
       {/* Tabs / Sidebar links list */}

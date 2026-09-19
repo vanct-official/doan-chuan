@@ -56,15 +56,15 @@ export default defineConfig(({ mode }) => {
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'offline.html'],
         manifest: {
           // Tên đầy đủ hiển thị khi cài đặt / splash screen
-          name: 'Hệ Thống Quản Lý Tour Du Lịch',
+          name: 'Đoàn Chuẩn - Hệ Thống Quản Lý Tour',
           // Tên ngắn dưới icon trên màn hình chính (tối đa ~12 ký tự)
-          short_name: 'Tour Manager',
+          short_name: 'Đoàn Chuẩn',
           // URL mở khi launch từ home screen
           start_url: '/',
           // standalone = ẩn thanh địa chỉ trình duyệt, giống app native
           display: 'standalone',
           // Màu thanh trạng thái / theme (Android, một số trình duyệt)
-          theme_color: '#4f46e5',
+          theme_color: '#0284c7',
           // Màu nền splash screen khi app đang load
           background_color: '#f8fafc',
           // Hướng ưu tiên trên mobile

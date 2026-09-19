@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useColorMode } from '../theme/ThemeContext';
 import vanctWhite from '../assets/VanCT_White.png';
 import vanctBlack from '../assets/VanCT_Black.png';
+import { BrandLogo } from './BrandLogo';
 
 export const Footer = () => {
   const { t } = useTranslation();
@@ -34,29 +35,8 @@ export const Footer = () => {
         <Grid container spacing={4} justifyContent="space-between">
           {/* Brand & Mission */}
           <Grid item xs={12} md={5}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
-              <Box
-                sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 2.5,
-                  p: 0.5,
-                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
-                }}
-              >
-                <img
-                  src="/doanchuan_vanct.png"
-                  alt="Đoàn Chuẩn"
-                  style={{ height: 22, objectFit: 'contain' }}
-                />
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-                Đoàn Chuẩn
-              </Typography>
+            <Box sx={{ mb: 1.5 }}>
+              <BrandLogo size={36} showText={true} />
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 420, lineHeight: 1.7, mb: 2 }}>
               Hệ thống quản lý tour du lịch, điều phối phương tiện đoàn xe và đồng hành cùng khách hàng trên mọi hành trình. Hoạt động mượt mà ngay cả khi ngoại tuyến.

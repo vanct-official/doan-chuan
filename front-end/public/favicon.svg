@@ -1,6 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <rect width="64" height="64" rx="14" fill="#4f46e5"/>
-  <path d="M32 12c-8.5 0-15.5 6.5-15.5 14.5 0 10.5 15.5 25.5 15.5 25.5S47.5 37 47.5 26.5C47.5 18.5 40.5 12 32 12z" fill="#fff"/>
-  <circle cx="32" cy="26" r="5.5" fill="#4f46e5"/>
-  <path d="M18 48h28" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  <defs>
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284c7"/>
+      <stop offset="100%" stop-color="#0369a1"/>
+    </linearGradient>
+    <linearGradient id="favAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#favBg)"/>
+  <path d="M14 50 C26 54 38 54 50 50" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+  <circle cx="47" cy="49" r="3" fill="url(#favAccent)"/>
+  <path d="M32 10 C22.6 10 15 17.6 15 27 C15 38 28.5 47 31 48.5 C31.6 48.9 32.4 48.9 33 48.5 C35.5 47 49 38 49 27 C49 17.6 41.4 10 32 10 Z" fill="#ffffff"/>
+  <circle cx="32" cy="25" r="6" fill="url(#favBg)"/>
+  <circle cx="32" cy="25" r="2.8" fill="url(#favAccent)"/>
 </svg>
